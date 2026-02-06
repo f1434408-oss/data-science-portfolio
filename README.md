@@ -30,33 +30,30 @@ Este repositorio reúne proyectos de **análisis de datos, machine learning y bu
 📊 Proyectos de Data Analytics & Machine Learning
 
 Los siguientes proyectos fueron desarrollados como parte de mi formación y experiencia práctica en Data Analytics y Machine Learning, aplicando técnicas estadísticas y modelos supervisados a problemas reales.
-Actualmente se encuentran en proceso de documentación técnica detallada.
+Actualmente se encuentran en proceso de documentación detallada.
 
 🧵 Predicción de calidad del hilo (Proyecto industrial)
 
-Análisis exploratorio de datos (EDA) y preparación de datasets a partir de pruebas de calidad del algodón, variables de pre-hilandería y parámetros operativos de maquinaria.
-
-Integración de variables cuantitativas y categóricas del proceso productivo (velocidades, máquinas, etapas).
-
-Entrenamiento y evaluación de modelos de regresión, utilizando una regresión lineal como baseline y Random Forest Regressor como modelo principal.
-
-Generación de insights operativos para el análisis de escenarios (what-if) y apoyo a decisiones de control de calidad.
+- Análisis exploratorio de datos (EDA), limpieza y preparación del dataset a partir de pruebas de calidad del algodón, variables de pre-hilandería y parámetros operativos de maquinaria.
+- Integración de variables cuantitativas y cualitativas del proceso productivo (velocidades, máquinas, etapas).
+- Entrenamiento y comparación de modelos de regresión, utilizando una regresión lineal como baseline y Random Forest Regressor como modelo principal.
+- Generación de insights operativos para el análisis de escenarios (what-if) y apoyo a decisiones de control de calidad.
 
 🛠️ Indicador analítico de priorización de mantenimiento
 
-Desarrollo de un indicador de priorización combinando variables de calidad del producto, velocidad ajustada por modelo y antigüedad de equipos.
+Desarrollo de un indicador de priorización combinando variables de calidad, velocidad ajustada por modelo y antigüedad de equipos.
 
-Análisis en Python orientado a optimizar la asignación de recursos de mantenimiento y reducir riesgos operativos.
+Análisis en Python orientado a optimizar la asignación de recursos de mantenimiento.
 
 Enfoque en la interpretación del indicador como herramienta de soporte a la toma de decisiones.
 
-📈 Análisis estadístico del proceso de hilandería y desempeño en tejeduría
+📈 Relación estadística entre proceso de hilandería y desempeño en tejeduría
 
 Aplicación de pruebas estadísticas para analizar la relación entre variables del proceso de producción del hilo y su desempeño posterior en el área de tejeduría.
 
-Evaluación de relaciones entre variables cuantitativas y cualitativas del proceso productivo y los indicadores de desempeño.
+Evaluación de relaciones entre variables cuantitativas y cualitativas e indicadores de desempeño.
 
-Identificación de factores críticos que impactan la calidad y eficiencia del proceso aguas abajo.
+Identificación de factores críticos que impactan la calidad y eficiencia del proceso.
 
 🚗 Predicción de precios de autos
 
@@ -80,14 +77,13 @@ Análisis comparativo del desempeño de los clasificadores.
 
 🧬 Propuesta de centros de tratamiento para cáncer
 
-Análisis exploratorio y estadístico de datos de salud y ubicación geográfica.
+Análisis exploratorio y estadístico de datos relacionados con salud y ubicación geográfica.
 
 Aplicación de análisis espacial y modelos analíticos para apoyar la identificación de zonas con necesidad de centros de tratamiento.
 
-Enfoque en la interpretación de resultados y apoyo a decisiones estratégicas.
+Enfoque en la interpretación de resultados y apoyo a la toma de decisiones estratégicas.
 
 Consideraciones éticas y uso responsable de modelos analíticos en contextos de salud.
-
 ---
 
 ## 📬 Contacto
