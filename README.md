@@ -27,28 +27,66 @@ Este repositorio reúne proyectos de **análisis de datos, machine learning y bu
 
 ---
 
-## 📂 Proyectos
+📊 Proyectos de Data Analytics & Machine Learning
 
-Los siguientes proyectos fueron desarrollados como parte de mi formación en Data Analytics y Machine Learning, aplicando técnicas estadísticas y modelos supervisados a problemas reales.  
-Actualmente se encuentran en proceso de documentación detallada.
+Los siguientes proyectos fueron desarrollados como parte de mi formación y experiencia práctica en Data Analytics y Machine Learning, aplicando técnicas estadísticas y modelos supervisados a problemas reales.
+Actualmente se encuentran en proceso de documentación técnica detallada.
 
-### 🚗 Predicción de precios de autos
-- Análisis exploratorio de datos (EDA), limpieza y tratamiento de outliers.
-- Transformación de variables y preparación del dataset para modelamiento.
-- Entrenamiento y comparación de modelos de regresión.
-- Evaluación del desempeño del modelo mediante métricas estadísticas y validación.
+🧵 Predicción de calidad del hilo (Proyecto industrial)
 
-### 🌍 Clasificación de objetos espaciales
-- Preprocesamiento y análisis exploratorio de datos astronómicos.
-- Aplicación de modelos de clasificación supervisada para identificación de objetos espaciales.
-- Evaluación de modelos mediante métricas como accuracy, recall y F1-score.
-- Análisis comparativo del desempeño de los clasificadores.
+Análisis exploratorio de datos (EDA) y preparación de datasets a partir de pruebas de calidad del algodón, variables de pre-hilandería y parámetros operativos de maquinaria.
 
-### 🧬 Propuesta de centros de tratamiento para cáncer
-- Análisis exploratorio y estadístico de datos relacionados con salud y ubicación geográfica.
-- Aplicación de modelos de clasificación y análisis espacial para apoyar la identificación de zonas con necesidad de centros de tratamiento.
-- Enfoque en la interpretación de resultados y apoyo a la toma de decisiones estratégicas.
-- Consideraciones éticas y uso responsable de modelos analíticos en contextos de salud.
+Integración de variables cuantitativas y categóricas del proceso productivo (velocidades, máquinas, etapas).
+
+Entrenamiento y evaluación de modelos de regresión, utilizando una regresión lineal como baseline y Random Forest Regressor como modelo principal.
+
+Generación de insights operativos para el análisis de escenarios (what-if) y apoyo a decisiones de control de calidad.
+
+🛠️ Indicador analítico de priorización de mantenimiento
+
+Desarrollo de un indicador de priorización combinando variables de calidad del producto, velocidad ajustada por modelo y antigüedad de equipos.
+
+Análisis en Python orientado a optimizar la asignación de recursos de mantenimiento y reducir riesgos operativos.
+
+Enfoque en la interpretación del indicador como herramienta de soporte a la toma de decisiones.
+
+📈 Análisis estadístico del proceso de hilandería y desempeño en tejeduría
+
+Aplicación de pruebas estadísticas para analizar la relación entre variables del proceso de producción del hilo y su desempeño posterior en el área de tejeduría.
+
+Evaluación de relaciones entre variables cuantitativas y cualitativas del proceso productivo y los indicadores de desempeño.
+
+Identificación de factores críticos que impactan la calidad y eficiencia del proceso aguas abajo.
+
+🚗 Predicción de precios de autos
+
+Análisis exploratorio de datos (EDA), limpieza y tratamiento de outliers.
+
+Transformación de variables y preparación del dataset para modelamiento.
+
+Entrenamiento y comparación de modelos de regresión.
+
+Evaluación del desempeño mediante métricas estadísticas y validación.
+
+🌍 Clasificación de objetos espaciales
+
+Preprocesamiento y análisis exploratorio de datos astronómicos.
+
+Aplicación de modelos de clasificación supervisada para la identificación de objetos espaciales.
+
+Evaluación de modelos mediante métricas como accuracy, recall y F1-score.
+
+Análisis comparativo del desempeño de los clasificadores.
+
+🧬 Propuesta de centros de tratamiento para cáncer
+
+Análisis exploratorio y estadístico de datos de salud y ubicación geográfica.
+
+Aplicación de análisis espacial y modelos analíticos para apoyar la identificación de zonas con necesidad de centros de tratamiento.
+
+Enfoque en la interpretación de resultados y apoyo a decisiones estratégicas.
+
+Consideraciones éticas y uso responsable de modelos analíticos en contextos de salud.
 
 ---
 
