@@ -31,11 +31,23 @@ body {
     height: 100%;
 }
 
+.mapboxgl-popup-content {
+    background: #1e1e1e;
+    color: white;
+    border-radius: 10px;
+    font-size: 14px;
+    padding: 15px;
+}
+
+.mapboxgl-popup-tip {
+    border-top-color: #1e1e1e !important;
+}
+
 .legend {
     position: absolute;
     bottom: 20px;
     right: 20px;
-    background: rgba(20,20,20,0.9);
+    background: rgba(20,20,20,0.95);
     padding: 15px;
     border-radius: 10px;
     font-size: 13px;
@@ -78,14 +90,15 @@ body {
 <div id="map"></div>
 
 <div class="legend">
-    <div><span style="background:#1ABC9C;"></span>Contrato</div>
-    <div><span style="background:#F39C12;"></span>Invitación</div>
-    <div><span style="background:#E74C3C;"></span>Adjudicado</div>
+    <b>% Contrato</b><br><br>
+    <div><span style="background:#E74C3C;"></span>0 – 33%</div>
+    <div><span style="background:#F1C40F;"></span>34 – 66%</div>
+    <div><span style="background:#27AE60;"></span>67 – 100%</div>
 </div>
 
 <script>
 
-mapboxgl.accessToken = "pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwdXBpN3o2eCJ9.lM43dWvXvojawo82gZFOIw";
+mapboxgl.accessToken = "PEGA_AQUI_TU_PK";
 
 const map = new mapboxgl.Map({
     container: 'map',
@@ -94,7 +107,16 @@ const map = new mapboxgl.Map({
     zoom: 5.4
 });
 
+let popup;
+
 map.on('load', function () {
+
+    // 🔕 OCULTAR TODAS LAS ETIQUETAS
+    map.getStyle().layers.forEach(layer => {
+        if (layer.type === 'symbol') {
+            map.setLayoutProperty(layer.id, 'visibility', 'none');
+        }
+    });
 
     // 🌊 Mar elegante
     map.setPaintProperty('water', 'fill-color', '#0f2433');
@@ -106,30 +128,22 @@ map.on('load', function () {
 
     map.addSource('hover-departamento', {
         type: 'geojson',
-        data: {
-            type: "FeatureCollection",
-            features: []
-        }
+        data: { type: "FeatureCollection", features: [] }
     });
 
-    // 🎨 Colores ejecutivos
-    function getColor(pct) {
-        if (pct <= 33) return "#E74C3C";
-        if (pct <= 66) return "#F39C12";
-        return "#1ABC9C";
-    }
+    const colorExpression = [
+        'case',
+        ['<=', ['get', 'CONTRATO'], 33], '#E74C3C',
+        ['<=', ['get', 'CONTRATO'], 66], '#F1C40F',
+        '#27AE60'
+    ];
 
     map.addLayer({
         id: 'fill-layer',
         type: 'fill',
         source: 'departamentos',
         paint: {
-            'fill-color': [
-                'case',
-                ['<=', ['get', 'CONTRATO'], 33], '#E74C3C',
-                ['<=', ['get', 'CONTRATO'], 66], '#F39C12',
-                '#1ABC9C'
-            ],
+            'fill-color': colorExpression,
             'fill-opacity': 0.85
         }
     });
@@ -149,25 +163,17 @@ map.on('load', function () {
         type: 'fill',
         source: 'hover-departamento',
         paint: {
-            'fill-color': '#1ABC9C',
+            'fill-color': colorExpression,
             'fill-opacity': 1
         }
     });
 
-    // 🔥 Función para escalar geometría
     function scaleFeature(feature, scale) {
-
         const newFeature = JSON.parse(JSON.stringify(feature));
-
         const coords = newFeature.geometry.coordinates[0];
 
         let cx = 0, cy = 0;
-
-        coords.forEach(p => {
-            cx += p[0];
-            cy += p[1];
-        });
-
+        coords.forEach(p => { cx += p[0]; cy += p[1]; });
         cx /= coords.length;
         cy /= coords.length;
 
@@ -181,18 +187,17 @@ map.on('load', function () {
 
     map.on('mousemove', 'fill-layer', function (e) {
 
-        map.getCanvas().style.cursor = 'pointer';
-
         const feature = e.features[0];
-
-        const scaled = scaleFeature(feature, 1.25); // 🔥 25% más grande
+        const scaled = scaleFeature(feature, 1.7);
 
         map.getSource('hover-departamento').setData({
             type: "FeatureCollection",
             features: [scaled]
         });
 
-        new mapboxgl.Popup({ offset: 15 })
+        if (popup) popup.remove();
+
+        popup = new mapboxgl.Popup({ offset: 15 })
             .setLngLat(e.lngLat)
             .setHTML(`
                 <b style="font-size:16px;">${feature.properties.NOMBDEP}</b>
@@ -205,20 +210,14 @@ map.on('load', function () {
                 <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}
             `)
             .addTo(map);
-
     });
 
     map.on('mouseleave', 'fill-layer', function () {
-
-        map.getCanvas().style.cursor = '';
-
         map.getSource('hover-departamento').setData({
             type: "FeatureCollection",
             features: []
         });
-
-        const popups = document.getElementsByClassName('mapboxgl-popup');
-        while(popups[0]) popups[0].remove();
+        if (popup) popup.remove();
     });
 
 });
