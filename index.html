@@ -2,50 +2,52 @@
 <html>
 <head>
 <meta charset="utf-8" />
+<title>Mapa PAE Perú</title>
 
-<script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
-<script src="https://unpkg.com/@deck.gl/geo-layers@latest/dist.min.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet"/>
 
 <style>
-body { margin: 0; font-family: 'Segoe UI', sans-serif; }
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #111;
+}
 
 #panel {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 320px;
-  height: 100%;
-  background: rgba(20,20,20,0.96);
-  color: white;
-  padding: 24px;
-  z-index: 10;
-  box-shadow: 4px 0 20px rgba(0,0,0,0.6);
+    position: absolute;
+    width: 320px;
+    height: 100%;
+    background: linear-gradient(180deg, #111 0%, #1a1a1a 100%);
+    color: white;
+    padding: 25px;
+    z-index: 1;
 }
 
 #map {
-  position: absolute;
-  left: 320px;
-  width: calc(100% - 320px);
-  height: 100%;
+    position: absolute;
+    left: 320px;
+    width: calc(100% - 320px);
+    height: 100%;
 }
 
-h2 {
-  margin-top: 0;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+.legend {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(20,20,20,0.9);
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: white;
 }
 
-.tooltip {
-  background: rgba(20,20,20,0.92);
-  color: white;
-  padding: 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
-  backdrop-filter: blur(6px);
+.legend span {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+    border-radius: 3px;
 }
 </style>
 </head>
@@ -53,153 +55,173 @@ h2 {
 <body>
 
 <div id="panel">
-  <h2>PE Estadística Nacional</h2>
+    <h2>PE Estadística Nacional</h2>
 
-  <b>IIEE:</b> 67,055<br>
-  <b>Usuarios:</b> 4,187,782<br>
-  <b>Ítems:</b> 711<br>
+    <p><b>IIEE:</b> 67,055<br>
+    <b>Usuarios:</b> 4,187,782<br>
+    <b>Ítems:</b> 711</p>
 
-  <hr style="border-color: rgba(255,255,255,0.1);">
+    <hr style="opacity:0.2;">
 
-  <b>Estado:</b><br>
-  • CONTRATO: 38%<br>
-  • ADJUDICADO: 20%<br>
-  • EN INVITACIÓN: 43%<br><br>
+    <p><b>Estado:</b><br>
+    • CONTRATO: 38%<br>
+    • ADJUDICADO: 20%<br>
+    • EN INVITACIÓN: 43%</p>
 
-  <b>Modalidad:</b><br>
-  • COMIDA CALIENTE: 74%<br>
-  • COMIDA LISTA PARA CONSUMO: 26%
+    <hr style="opacity:0.2;">
+
+    <p><b>Modalidad:</b><br>
+    • COMIDA CALIENTE: 74%<br>
+    • COMIDA LISTA PARA CONSUMO: 26%</p>
 </div>
 
 <div id="map"></div>
 
+<div class="legend">
+    <div><span style="background:#1ABC9C;"></span>Contrato</div>
+    <div><span style="background:#F39C12;"></span>Invitación</div>
+    <div><span style="background:#E74C3C;"></span>Adjudicado</div>
+</div>
+
 <script>
 
-// 🔥 PEGA TU TOKEN DE MAPBOX AQUÍ
-const MAPBOX_TOKEN = "pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwdXBpN3o2eCJ9.lM43dWvXvojawo82gZFOIw";
+mapboxgl.accessToken = "pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwdXBpN3o2eCJ9.lM43dWvXvojawo82gZFOIw";
 
-let hoveredFeature = null;
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/dark-v11',
+    center: [-74.8, -9.3],
+    zoom: 5.4
+});
 
-// 🎨 Paleta refinada institucional
-function getColor(pct) {
-  if (pct <= 33) return [166, 25, 46];   // rojo profundo
-  if (pct <= 66) return [230, 159, 0];   // ámbar elegante
-  return [0, 114, 57];                   // verde institucional
-}
+map.on('load', function () {
 
-// 🔥 Calcular centroide
-function getCentroid(coords) {
-  let x = 0, y = 0, count = 0;
+    // 🌊 Mar elegante
+    map.setPaintProperty('water', 'fill-color', '#0f2433');
 
-  coords[0].forEach(point => {
-    x += point[0];
-    y += point[1];
-    count++;
-  });
-
-  return [x / count, y / count];
-}
-
-// 🔥 Escalar polígono horizontalmente
-function scalePolygon(feature, scaleFactor) {
-  const newFeature = JSON.parse(JSON.stringify(feature));
-  const coords = newFeature.geometry.coordinates;
-  const centroid = getCentroid(coords);
-
-  newFeature.geometry.coordinates = coords.map(ring =>
-    ring.map(point => [
-      centroid[0] + (point[0] - centroid[0]) * scaleFactor,
-      centroid[1] + (point[1] - centroid[1]) * scaleFactor
-    ])
-  );
-
-  return newFeature;
-}
-
-fetch('geo_pae_departamental.geojson')
-  .then(response => response.json())
-  .then(data => {
-
-    const deckgl = new deck.Deck({
-      container: 'map',
-      mapboxAccessToken: MAPBOX_TOKEN,
-      mapStyle: "mapbox://styles/mapbox/dark-v10",
-      initialViewState: {
-        longitude: -75.02,
-        latitude: -9.19,
-        zoom: 5,
-        pitch: 45
-      },
-      controller: true,
-      layers: [],
-      getTooltip: ({object}) => object && {
-        html: `
-          <div class="tooltip">
-            <b style="font-size:16px;">${object.properties.NOMBDEP}</b>
-            <hr style="border-color: rgba(255,255,255,0.1);">
-
-            <b>Ítems:</b> ${object.properties.ITEMS_TOTAL}<br>
-            <b>% Contrato:</b> ${object.properties.CONTRATO}%<br>
-            <b>% Adjudicado:</b> ${object.properties.ADJUDICADO}%<br>
-            <b>% En Invitación:</b> ${object.properties["EN INVITACIÓN"]}%<br>
-
-            <br>
-
-            <b>IIEE:</b> ${object.properties.IIEE_TOTAL}<br>
-            <b>Usuarios:</b> ${object.properties.USUARIOS_FMT}
-          </div>
-        `
-      }
+    map.addSource('departamentos', {
+        type: 'geojson',
+        data: 'geo_pae_departamental.geojson'
     });
 
-    function updateLayers() {
-
-      const baseLayer = new deck.GeoJsonLayer({
-        id: 'base-layer',
-        data: data,
-        pickable: true,
-        filled: true,
-        extruded: false,
-        getFillColor: d => {
-          const c = getColor(d.properties.CONTRATO);
-
-          if (hoveredFeature && d.properties.NOMBDEP !== hoveredFeature.properties.NOMBDEP) {
-            return [c[0], c[1], c[2], 90]; // fade del resto
-          }
-
-          return [c[0], c[1], c[2], 210];
-        },
-        getLineColor: [200,200,200],
-        lineWidthMinPixels: 0.8,
-        onHover: info => {
-          hoveredFeature = info.object;
-          updateLayers();
+    map.addSource('hover-departamento', {
+        type: 'geojson',
+        data: {
+            type: "FeatureCollection",
+            features: []
         }
-      });
+    });
 
-      const hoverLayer = hoveredFeature
-        ? new deck.GeoJsonLayer({
-            id: 'hover-layer',
-            data: scalePolygon(hoveredFeature, 2.2), // 🔥 crecimiento fuerte
-            filled: true,
-            extruded: false,
-            getFillColor: getColor(hoveredFeature.properties.CONTRATO),
-            getLineColor: [255,255,255],
-            lineWidthMinPixels: 2
-          })
-        : null;
-
-      deckgl.setProps({
-        layers: hoverLayer
-          ? [baseLayer, hoverLayer]
-          : [baseLayer]
-      });
+    // 🎨 Colores ejecutivos
+    function getColor(pct) {
+        if (pct <= 33) return "#E74C3C";
+        if (pct <= 66) return "#F39C12";
+        return "#1ABC9C";
     }
 
-    updateLayers();
+    map.addLayer({
+        id: 'fill-layer',
+        type: 'fill',
+        source: 'departamentos',
+        paint: {
+            'fill-color': [
+                'case',
+                ['<=', ['get', 'CONTRATO'], 33], '#E74C3C',
+                ['<=', ['get', 'CONTRATO'], 66], '#F39C12',
+                '#1ABC9C'
+            ],
+            'fill-opacity': 0.85
+        }
+    });
 
-  });
+    map.addLayer({
+        id: 'border-layer',
+        type: 'line',
+        source: 'departamentos',
+        paint: {
+            'line-color': 'rgba(255,255,255,0.4)',
+            'line-width': 1
+        }
+    });
 
+    map.addLayer({
+        id: 'hover-layer',
+        type: 'fill',
+        source: 'hover-departamento',
+        paint: {
+            'fill-color': '#1ABC9C',
+            'fill-opacity': 1
+        }
+    });
+
+    // 🔥 Función para escalar geometría
+    function scaleFeature(feature, scale) {
+
+        const newFeature = JSON.parse(JSON.stringify(feature));
+
+        const coords = newFeature.geometry.coordinates[0];
+
+        let cx = 0, cy = 0;
+
+        coords.forEach(p => {
+            cx += p[0];
+            cy += p[1];
+        });
+
+        cx /= coords.length;
+        cy /= coords.length;
+
+        newFeature.geometry.coordinates[0] = coords.map(p => [
+            cx + (p[0] - cx) * scale,
+            cy + (p[1] - cy) * scale
+        ]);
+
+        return newFeature;
+    }
+
+    map.on('mousemove', 'fill-layer', function (e) {
+
+        map.getCanvas().style.cursor = 'pointer';
+
+        const feature = e.features[0];
+
+        const scaled = scaleFeature(feature, 1.25); // 🔥 25% más grande
+
+        map.getSource('hover-departamento').setData({
+            type: "FeatureCollection",
+            features: [scaled]
+        });
+
+        new mapboxgl.Popup({ offset: 15 })
+            .setLngLat(e.lngLat)
+            .setHTML(`
+                <b style="font-size:16px;">${feature.properties.NOMBDEP}</b>
+                <hr style="opacity:0.3;">
+                <b>Ítems:</b> ${feature.properties.ITEMS_TOTAL}<br><br>
+                <b>% Contrato:</b> ${feature.properties.CONTRATO}%<br>
+                <b>% Adjudicado:</b> ${feature.properties.ADJUDICADO}%<br>
+                <b>% En Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%<br><br>
+                <b>IIEE:</b> ${feature.properties.IIEE_TOTAL}<br>
+                <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}
+            `)
+            .addTo(map);
+
+    });
+
+    map.on('mouseleave', 'fill-layer', function () {
+
+        map.getCanvas().style.cursor = '';
+
+        map.getSource('hover-departamento').setData({
+            type: "FeatureCollection",
+            features: []
+        });
+
+        const popups = document.getElementsByClassName('mapboxgl-popup');
+        while(popups[0]) popups[0].remove();
+    });
+
+});
 </script>
 
 </body>
