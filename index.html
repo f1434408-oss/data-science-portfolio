@@ -14,35 +14,31 @@ body {
     background: #111;
 }
 
-/* ================= PANEL IZQUIERDO ================= */
+/* ================= PANEL ================= */
 
 #panel {
     position: absolute;
-    width: 340px;
+    width: 360px;
     height: 100%;
     background: linear-gradient(180deg, #111 0%, #1b1b1b 100%);
     color: white;
-    padding: 30px;
+    padding: 32px;
     z-index: 1;
-    font-size: 15px;
-    line-height: 1.6;
+    font-size: 16px;
+    line-height: 1.7;
 }
 
 #panel h2 {
-    font-size: 22px;
-    margin-bottom: 20px;
-}
-
-#panel b {
-    font-size: 15px;
+    font-size: 24px;
+    margin-bottom: 22px;
 }
 
 /* ================= MAPA ================= */
 
 #map {
     position: absolute;
-    left: 340px;
-    width: calc(100% - 340px);
+    left: 360px;
+    width: calc(100% - 360px);
     height: 100%;
 }
 
@@ -51,9 +47,9 @@ body {
 .mapboxgl-popup-content {
     background: #1c1c1c;
     color: white;
-    border-radius: 12px;
-    font-size: 15px;
-    padding: 18px;
+    border-radius: 14px;
+    font-size: 16px;
+    padding: 20px;
 }
 
 .mapboxgl-popup-tip {
@@ -64,29 +60,29 @@ body {
 
 .legend {
     position: absolute;
-    bottom: 25px;
-    right: 25px;
+    bottom: 30px;
+    right: 30px;
     background: rgba(15,15,15,0.97);
-    padding: 20px;
-    border-radius: 14px;
-    font-size: 15px;
+    padding: 22px;
+    border-radius: 16px;
+    font-size: 16px;
     color: white;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    box-shadow: 0 0 25px rgba(0,0,0,0.6);
 }
 
 .legend b {
-    font-size: 16px;
+    font-size: 17px;
 }
 
 .legend div {
-    margin-top: 8px;
+    margin-top: 10px;
 }
 
 .legend span {
     display: inline-block;
-    width: 16px;
-    height: 16px;
-    margin-right: 8px;
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
     border-radius: 4px;
 }
 </style>
@@ -166,6 +162,7 @@ map.on('load', function () {
         '#27AE60'
     ];
 
+    /* Capa base */
     map.addLayer({
         id: 'fill-layer',
         type: 'fill',
@@ -186,8 +183,9 @@ map.on('load', function () {
         }
     });
 
+    /* Hover fill */
     map.addLayer({
-        id: 'hover-layer',
+        id: 'hover-fill',
         type: 'fill',
         source: 'hover-departamento',
         paint: {
@@ -196,7 +194,19 @@ map.on('load', function () {
         }
     });
 
+    /* Hover borde blanco fuerte */
+    map.addLayer({
+        id: 'hover-border',
+        type: 'line',
+        source: 'hover-departamento',
+        paint: {
+            'line-color': '#ffffff',
+            'line-width': 3
+        }
+    });
+
     function scaleFeature(feature, scale) {
+
         const newFeature = JSON.parse(JSON.stringify(feature));
         const coords = newFeature.geometry.coordinates[0];
 
@@ -217,7 +227,7 @@ map.on('load', function () {
 
         const feature = e.features[0];
 
-        /* 🔥 AGRANDAMIENTO FUERTE */
+        /* 🔥 ESCALA MUY GRANDE */
         const scaled = scaleFeature(feature, 2.4);
 
         map.getSource('hover-departamento').setData({
@@ -227,10 +237,10 @@ map.on('load', function () {
 
         if (popup) popup.remove();
 
-        popup = new mapboxgl.Popup({ offset: 18 })
+        popup = new mapboxgl.Popup({ offset: 20 })
             .setLngLat(e.lngLat)
             .setHTML(`
-                <b style="font-size:17px;">${feature.properties.NOMBDEP}</b>
+                <b style="font-size:18px;">${feature.properties.NOMBDEP}</b>
                 <hr style="opacity:0.3;">
                 <b>Ítems:</b> ${feature.properties.ITEMS_TOTAL}<br><br>
                 <b>% Contrato:</b> ${feature.properties.CONTRATO}%<br>
@@ -243,10 +253,12 @@ map.on('load', function () {
     });
 
     map.on('mouseleave', 'fill-layer', function () {
+
         map.getSource('hover-departamento').setData({
             type: "FeatureCollection",
             features: []
         });
+
         if (popup) popup.remove();
     });
 
