@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+
+<script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+<script src="https://unpkg.com/@deck.gl/geo-layers@latest/dist.min.js"></script>
+
+<style>
+body { margin: 0; font-family: Arial, sans-serif; }
+
+#panel {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 300px;
+  height: 100%;
+  background: white;
+  padding: 20px;
+  z-index: 10;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+  overflow-y: auto;
+}
+
+#map {
+  position: absolute;
+  left: 300px;
+  width: calc(100% - 300px);
+  height: 100%;
+}
+
+.kpi {
+  margin-bottom: 15px;
+}
+
+.label {
+  font-size: 13px;
+  color: #666;
+}
+
+.value {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.tooltip {
+  background: white;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="panel">
+  <h2>Indicadores Nacionales</h2>
+
+  <div class="kpi">
+    <div class="label">Total IIEE</div>
+    <div class="value">67,055</div>
+  </div>
+
+  <div class="kpi">
+    <div class="label">Total Usuarios</div>
+    <div class="value">4,187,782</div>
+  </div>
+
+  <div class="kpi">
+    <div class="label">Total Ítems</div>
+    <div class="value">711</div>
+  </div>
+
+</div>
+
+<div id="map"></div>
+
+<script>
+
+let hoveredFeature = null;
+
+function getColor(pct) {
+  if (pct <= 33) return [220, 53, 69];
+  if (pct <= 66) return [255, 193, 7];
+  return [40, 167, 69];
+}
+
+fetch('geo_pae_departamental.geojson')
+  .then(response => response.json())
+  .then(data => {
+
+    const deckgl = new deck.Deck({
+      container: 'map',
+      initialViewState: {
+        longitude: -75.02,
+        latitude: -9.19,
+        zoom: 5,
+        pitch: 45
+      },
+      controller: true,
+      layers: [],
+      getTooltip: ({object}) => object && {
+        html: `
+          <div class="tooltip">
+            <b>${object.properties.NOMBDEP}</b><br><br>
+            IIEE: ${object.properties.IIEE_TOTAL}<br>
+            Usuarios: ${object.properties.USUARIOS_FMT}<br>
+            Items: ${object.properties.ITEMS_TOTAL}<br><br>
+            % Contrato: ${object.properties.CONTRATO}%<br>
+            % En Invitación: ${object.properties["EN INVITACIÓN"]}%<br>
+            % Adjudicado: ${object.properties.ADJUDICADO}%<br><br>
+            Modalidad:<br>
+            - Comida Caliente: ${object.properties["COMIDA CALIENTE"]}%<br>
+            - Lista Consumo: ${object.properties["COMIDA LISTA PARA CONSUMO"]}%
+          </div>
+        `
+      }
+    });
+
+    function updateLayers() {
+
+      const baseLayer = new deck.GeoJsonLayer({
+        id: 'base-layer',
+        data: data,
+        pickable: true,
+        extruded: false,
+        filled: true,
+        getFillColor: d => getColor(d.properties.CONTRATO),
+        getLineColor: [0,0,0],
+        onHover: info => {
+          hoveredFeature = info.object;
+          updateLayers();
+        }
+      });
+
+      const hoverLayer = hoveredFeature
+        ? new deck.GeoJsonLayer({
+            id: 'hover-layer',
+            data: hoveredFeature,
+            extruded: true,
+            getElevation: 8000,
+            getFillColor: getColor(hoveredFeature.properties.CONTRATO),
+            getLineColor: [0,0,0],
+            stroked: true
+          })
+        : null;
+
+      deckgl.setProps({
+        layers: hoverLayer
+          ? [baseLayer, hoverLayer]
+          : [baseLayer]
+      });
+    }
+
+    updateLayers();
+
+  });
+
+</script>
+
+</body>
+</html>
