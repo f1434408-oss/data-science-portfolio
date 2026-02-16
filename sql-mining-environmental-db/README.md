@@ -31,7 +31,7 @@ The model consists of six entities:
 
 ## 📐 Entity–Relationship Diagram
 
-![ERD Diagram](ERD_MODEL.jpg)
+![ERD Diagram](erd-mining-environmental-db.jpg)
 
 ### Key Characteristics
 
