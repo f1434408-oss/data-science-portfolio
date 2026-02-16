@@ -29,6 +29,10 @@ The model consists of six entities:
 - **COMPROMISO**
 - **INCIDENTE**
 
+## 📐 Entity–Relationship Diagram
+
+![ERD Diagram](ERD MODEL.jpg)
+
 ### Key Characteristics
 
 - **Primary and Foreign Keys** ensure referential integrity.
