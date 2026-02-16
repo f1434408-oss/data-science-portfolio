@@ -55,7 +55,7 @@ The model consists of six entities:
 - `ddl.sql` → Table creation and constraints (**Data Definition Language**)
 - `dml.sql` → Data insertion scripts (**Data Manipulation Language**)
 - `queries.sql` → Analytical SQL queries
-- `ERD.png` → Entity-Relationship Diagram
+- `erd-mining-environmental-db.jpg` → Entity-Relationship Diagram   
 
 ---
 
