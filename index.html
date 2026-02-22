@@ -14,8 +14,6 @@ body {
     background: #111;
 }
 
-/* ================= PANEL ================= */
-
 #panel {
     position: absolute;
     width: 420px;
@@ -38,16 +36,12 @@ body {
     margin-bottom: 30px;
 }
 
-/* ================= MAPA ================= */
-
 #map {
     position: absolute;
     left: 420px;
     width: calc(100% - 420px);
     height: 100%;
 }
-
-/* ================= POPUP ================= */
 
 .mapboxgl-popup-content {
     background: #1c1c1c;
@@ -60,8 +54,6 @@ body {
 .mapboxgl-popup-tip {
     border-top-color: #1c1c1c !important;
 }
-
-/* ================= LEYENDA ================= */
 
 .legend {
     margin-top: 40px;
@@ -111,7 +103,6 @@ body {
         </p>
     </div>
 
-    <!-- LEYENDA AHORA DENTRO DEL PANEL -->
     <div class="legend">
         <b>Estado Mayoritario</b>
         <div><span style="background:#27AE60;"></span>Contrato</div>
@@ -138,14 +129,12 @@ let popup;
 
 map.on('load', function () {
 
-    /* Ocultar etiquetas */
     map.getStyle().layers.forEach(layer => {
         if (layer.type === 'symbol') {
             map.setLayoutProperty(layer.id, 'visibility', 'none');
         }
     });
 
-    /* OCÉANO CELESTE TIPO PYDECK */
     map.setPaintProperty('water', 'fill-color', '#5dade2');
 
     map.addSource('departamentos', {
@@ -160,19 +149,16 @@ map.on('load', function () {
 
     const colorExpression = [
         'case',
-
         ['all',
             ['>=', ['get', 'CONTRATO'], ['get', 'ADJUDICADO']],
             ['>=', ['get', 'CONTRATO'], ['get', 'EN INVITACIÓN']]
         ],
         '#27AE60',
-
         ['all',
             ['>=', ['get', 'ADJUDICADO'], ['get', 'CONTRATO']],
             ['>=', ['get', 'ADJUDICADO'], ['get', 'EN INVITACIÓN']]
         ],
         '#F1C40F',
-
         '#E74C3C'
     ];
 
@@ -233,7 +219,8 @@ map.on('load', function () {
         return newFeature;
     }
 
-    map.on('mousemove', 'fill-layer', function (e) {
+    map.on('mouseenter', 'fill-layer', function (e) {
+
         const feature = e.features[0];
         const scaled = scaleFeature(feature, 2.4);
 
@@ -257,33 +244,35 @@ map.on('load', function () {
                 <b>Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%<br><br>
 
                 <b>IIEE:</b> ${feature.properties.IIEE_TOTAL}<br>
-                <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT.replace(/\n/g, ' ')}<br><br>
+                <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}<br><br>
 
-                <a href="#" id="ver-detalle" style="color:#48a0ff; font-weight:bold; text-decoration: underline;">Ver detalle completo</a>
+                <a href="#" id="ver-detalle" style="color:#48a0ff; font-weight:bold; text-decoration: underline;">
+                Ver detalle completo</a>
             `)
             .addTo(map);
 
-        // Agregar listener al hipervínculo para abrir modal con tabla filtrada (debes implementar la función)
         document.getElementById('ver-detalle').addEventListener('click', function(evt){
             evt.preventDefault();
             abrirModalConTabla(feature.properties.NOMBDEP);
         });
-    });
 
-    map.on('mouseleave', 'fill-layer', function () {
-        map.getSource('hover-departamento').setData({
-            type: "FeatureCollection",
-            features: []
-        });
-        if (popup) popup.remove();
     });
 
 });
 
-// Función para abrir modal con tabla (debes implementarla)
+/* Cerrar popup al hacer click fuera */
+map.on('click', function () {
+    if (popup) popup.remove();
+    map.getSource('hover-departamento')?.setData({
+        type: "FeatureCollection",
+        features: []
+    });
+});
+
 function abrirModalConTabla(departamento) {
     alert('Aquí debes mostrar la tabla filtrada para el departamento: ' + departamento);
 }
+
 </script>
 
 </body>
