@@ -12,51 +12,46 @@ body {
     margin: 0;
     font-family: 'Segoe UI', sans-serif;
     background: #111;
-    overflow: hidden;
 }
 
 /* ================= PANEL ================= */
-
 #panel {
     position: absolute;
-    width: 400px;
-    height: 100vh;
+    width: 420px;
+    height: 100%;
     background: linear-gradient(180deg, #111 0%, #1b1b1b 100%);
     color: white;
-    padding: 40px;
+    padding: 50px;
     z-index: 1;
-    font-size: 22px;
-    line-height: 1.8;
+    font-size: 24px;
+    line-height: 1.9;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    box-sizing: border-box;
 }
 
 #panel h2 {
-    font-size: 34px;
-    margin-bottom: 25px;
-    letter-spacing: 1px;
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    margin-bottom: 30px;
 }
 
 /* ================= MAPA ================= */
-
 #map {
     position: absolute;
-    left: 400px;
-    width: calc(100% - 400px);
-    height: 100vh;
+    left: 420px;
+    width: calc(100% - 420px);
+    height: 100%;
 }
 
 /* ================= POPUP ================= */
-
 .mapboxgl-popup-content {
     background: #1c1c1c;
     color: white;
     border-radius: 18px;
     font-size: 22px;
     padding: 28px;
-    min-width: 320px;
 }
 
 .mapboxgl-popup-tip {
@@ -64,27 +59,81 @@ body {
 }
 
 /* ================= LEYENDA ================= */
-
 .legend {
+    margin-top: 40px;
     padding-top: 20px;
     border-top: 1px solid rgba(255,255,255,0.1);
-    font-size: 20px;
-}
-
-.legend b {
     font-size: 22px;
 }
 
+.legend b {
+    font-size: 24px;
+}
+
 .legend div {
-    margin-top: 12px;
+    margin-top: 14px;
 }
 
 .legend span {
     display: inline-block;
-    width: 22px;
-    height: 22px;
-    margin-right: 12px;
+    width: 24px;
+    height: 24px;
+    margin-right: 14px;
     border-radius: 4px;
+}
+
+/* ================= MODAL ================= */
+#modal {
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.85);
+    z-index:1000;
+    overflow:auto;
+}
+#modalContent {
+    background:#1b1b1b;
+    color:white;
+    margin:50px auto;
+    padding:30px;
+    border-radius:18px;
+    width:90%;
+    max-width:1200px;
+    position:relative;
+}
+#closeModal {
+    position:absolute;
+    top:15px;
+    right:15px;
+    font-size:24px;
+    background:none;
+    border:none;
+    color:white;
+    cursor:pointer;
+}
+#modalTable {
+    width:100%;
+    border-collapse:collapse;
+    font-size:18px;
+    max-height:70vh;
+    display:block;
+    overflow-y:auto;
+}
+#modalTable thead, #modalTable tbody tr {
+    display:table;
+    width:100%;
+    table-layout:fixed;
+}
+#modalTable thead {
+    width:calc(100% - 1em);
+}
+#modalTable th, #modalTable td {
+    padding:6px;
+    border-bottom:1px solid #333;
+    text-align:left;
 }
 </style>
 </head>
@@ -92,18 +141,14 @@ body {
 <body>
 
 <div id="panel">
-
     <div>
-        <h2>BASE CONTROL PC<br>2026 PAE</h2>
-
+        <h2>BASE CONTROL PC 2026 PAE</h2>
         <p>
         <b>IIEE:</b> 67,055<br>
         <b>Usuarios:</b> 4,187,782<br>
         <b>Ítems:</b> 711
         </p>
-
         <hr style="opacity:0.2;">
-
         <p>
         <b>Estado:</b><br>
         • CONTRATO: 38%<br>
@@ -112,19 +157,41 @@ body {
         </p>
     </div>
 
+    <!-- LEYENDA DENTRO DEL PANEL -->
     <div class="legend">
         <b>Estado Mayoritario</b>
         <div><span style="background:#27AE60;"></span>Contrato</div>
         <div><span style="background:#F1C40F;"></span>Adjudicado</div>
         <div><span style="background:#E74C3C;"></span>Invitación</div>
     </div>
-
 </div>
 
 <div id="map"></div>
 
-<script>
+<!-- MODAL PARA TABLA -->
+<div id="modal">
+    <div id="modalContent">
+        <button id="closeModal">✖</button>
+        <h2 id="modalTitle" style="margin-bottom:20px;"></h2>
+        <table id="modalTable">
+            <thead>
+                <tr>
+                    <th>ITEM</th>
+                    <th>MODALIDAD_DCON</th>
+                    <th>N° DE IIEE</th>
+                    <th>N°DE USUARIOS</th>
+                    <th>VALOR REFERENCIAL</th>
+                    <th>VALOR ADJUDICADO</th>
+                    <th>ESTADO ACTUAL ITEM</th>
+                    <th>CONTRATO</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
 
+<script>
 mapboxgl.accessToken = "pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwdXBpN3o2eCJ9.lM43dWvXvojawo82gZFOIw";
 
 const map = new mapboxgl.Map({
@@ -136,16 +203,53 @@ const map = new mapboxgl.Map({
 
 let popup;
 
+// CARGAR BASE PAE JSON
+let basePAE = [];
+fetch("base_pae.json")
+  .then(res => res.json())
+  .then(data => { basePAE = data; })
+  .catch(err => console.error("Error cargando base_pae.json:", err));
+
+const modal = document.getElementById("modal");
+const modalTitle = document.getElementById("modalTitle");
+const modalTableBody = document.querySelector("#modalTable tbody");
+const closeModal = document.getElementById("closeModal");
+
+closeModal.addEventListener("click", () => {
+    modal.style.display = "none";
+});
+
+function showTable(departamento) {
+    modalTitle.innerText = `Detalle completo - ${departamento}`;
+    modalTableBody.innerHTML = "";
+
+    const rows = basePAE.filter(d => d.DEPARTAMENTO === departamento);
+    rows.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${r.ITEM}</td>
+            <td>${r.MODALIDAD_DCON}</td>
+            <td>${r["N° DE IIEE"]}</td>
+            <td>${r["N°DE USUARIOS"]}</td>
+            <td>${r["VALOR REFERENCIAL"]}</td>
+            <td>${r["VALOR ADJUDICADO"]}</td>
+            <td>${r["ESTADO ACTUAL ITEM"]}</td>
+            <td>${r.CONTRATO}</td>
+        `;
+        modalTableBody.appendChild(tr);
+    });
+
+    modal.style.display = "block";
+}
+
 map.on('load', function () {
 
-    /* Ocultar etiquetas */
     map.getStyle().layers.forEach(layer => {
         if (layer.type === 'symbol') {
             map.setLayoutProperty(layer.id, 'visibility', 'none');
         }
     });
 
-    /* Océano celeste */
     map.setPaintProperty('water', 'fill-color', '#5dade2');
 
     map.addSource('departamentos', {
@@ -160,16 +264,8 @@ map.on('load', function () {
 
     const colorExpression = [
         'case',
-        ['all',
-            ['>=', ['get', 'CONTRATO'], ['get', 'ADJUDICADO']],
-            ['>=', ['get', 'CONTRATO'], ['get', 'EN INVITACIÓN']]
-        ],
-        '#27AE60',
-        ['all',
-            ['>=', ['get', 'ADJUDICADO'], ['get', 'CONTRATO']],
-            ['>=', ['get', 'ADJUDICADO'], ['get', 'EN INVITACIÓN']]
-        ],
-        '#F1C40F',
+        ['all',['>=', ['get', 'CONTRATO'], ['get', 'ADJUDICADO']], ['>=', ['get', 'CONTRATO'], ['get', 'EN INVITACIÓN']]], '#27AE60',
+        ['all',['>=', ['get', 'ADJUDICADO'], ['get', 'CONTRATO']], ['>=', ['get', 'ADJUDICADO'], ['get', 'EN INVITACIÓN']]], '#F1C40F',
         '#E74C3C'
     ];
 
@@ -193,55 +289,19 @@ map.on('load', function () {
         }
     });
 
-    /* CAPA HOVER (AGRANDADO) */
-
-    map.addLayer({
-        id: 'hover-fill',
-        type: 'fill',
-        source: 'hover-departamento',
-        paint: {
-            'fill-color': colorExpression,
-            'fill-opacity': 1
-        }
-    });
-
-    map.addLayer({
-        id: 'hover-border',
-        type: 'line',
-        source: 'hover-departamento',
-        paint: {
-            'line-color': '#ffffff',
-            'line-width': 3
-        }
-    });
-
     function scaleFeature(feature, scale) {
-
         const newFeature = JSON.parse(JSON.stringify(feature));
         const coords = newFeature.geometry.coordinates[0];
-
-        let cx = 0, cy = 0;
+        let cx=0, cy=0;
         coords.forEach(p => { cx += p[0]; cy += p[1]; });
         cx /= coords.length;
         cy /= coords.length;
-
-        newFeature.geometry.coordinates[0] = coords.map(p => [
-            cx + (p[0] - cx) * scale,
-            cy + (p[1] - cy) * scale
-        ]);
-
+        newFeature.geometry.coordinates[0] = coords.map(p => [cx + (p[0]-cx)*scale, cy + (p[1]-cy)*scale]);
         return newFeature;
     }
 
-    map.on('mousemove', 'fill-layer', function (e) {
-
+    map.on('mousemove', 'fill-layer', function(e) {
         const feature = e.features[0];
-        const scaled = scaleFeature(feature, 2.4);
-
-        map.getSource('hover-departamento').setData({
-            type: "FeatureCollection",
-            features: [scaled]
-        });
 
         if (popup) popup.remove();
 
@@ -250,33 +310,32 @@ map.on('load', function () {
             .setHTML(`
                 <b style="font-size:24px;">${feature.properties.NOMBDEP}</b>
                 <hr style="opacity:0.3;">
-                
                 <b>Ítems:</b> ${feature.properties.ITEMS_TOTAL}<br><br>
-
                 <b>Contrato:</b> ${feature.properties.CONTRATO}%<br>
                 <b>Adjudicado:</b> ${feature.properties.ADJUDICADO}%<br>
                 <b>Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%<br><br>
-
                 <b>IIEE:</b> ${feature.properties.IIEE_TOTAL}<br>
-                <span style="white-space:nowrap;">
-                    <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}
-                </span>
+                <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}<br><br>
+                <a href="#" id="verDetalle" style="color:#5dade2; text-decoration:underline; font-weight:bold;">Ver detalle completo</a>
             `)
             .addTo(map);
+
+        setTimeout(() => {
+            const link = document.getElementById("verDetalle");
+            if (link) {
+                link.addEventListener("click", ev => {
+                    ev.preventDefault();
+                    showTable(feature.properties.NOMBDEP);
+                });
+            }
+        }, 50);
     });
 
-    map.on('mouseleave', 'fill-layer', function () {
-
-        map.getSource('hover-departamento').setData({
-            type: "FeatureCollection",
-            features: []
-        });
-
+    map.on('mouseleave', 'fill-layer', function() {
         if (popup) popup.remove();
     });
 
 });
-
 </script>
 
 </body>
