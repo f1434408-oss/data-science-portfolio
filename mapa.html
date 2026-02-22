@@ -40,7 +40,6 @@ body {
     font-size: 16px;
     padding: 20px;
 }
-
 </style>
 </head>
 
@@ -54,6 +53,15 @@ body {
         <strong>IIEE:</strong> 67,055<br>
         <strong>Usuarios:</strong> 4,187,782<br>
         <strong>Ítems:</strong> 711
+    </p>
+
+    <hr style="opacity:0.2;">
+
+    <p><strong>Estado:</strong></p>
+    <p>
+        • CONTRATO: 38%<br>
+        • ADJUDICADO: 20%<br>
+        • EN INVITACIÓN: 43%
     </p>
 </div>
 
@@ -76,13 +84,13 @@ map.on('load', function () {
 
     map.setPaintProperty('water', 'fill-color', '#3fa9f5');
 
-    // 🔵 SOURCE ESTÉTICO (DIVIDIDO)
+    // SOURCE DIVIDIDO (colores)
     map.addSource('departamentos-div', {
         type: 'geojson',
         data: 'geo_pae_departamental_dividido.geojson'
     });
 
-    // 🟢 SOURCE INDICADORES (ORIGINAL)
+    // SOURCE ORIGINAL (indicadores)
     map.addSource('departamentos-info', {
         type: 'geojson',
         data: 'geo_pae_departamental.geojson'
@@ -97,7 +105,6 @@ map.on('load', function () {
         '#ccc'
     ];
 
-    // CAPA BASE
     map.addLayer({
         id: 'fill-layer',
         type: 'fill',
@@ -118,7 +125,7 @@ map.on('load', function () {
         }
     });
 
-    // SOURCE PARA HOVER AGRANDADO
+    // SOURCE PARA HOVER
     map.addSource('hover-source', {
         type: 'geojson',
         data: { type: "FeatureCollection", features: [] }
@@ -144,15 +151,13 @@ map.on('load', function () {
         }
     });
 
-    // FUNCIÓN ESCALAR (Polygon y MultiPolygon)
+    // FUNCIÓN ESCALAR COMPLETA
     function scaleFeature(feature, scale) {
 
         const clone = JSON.parse(JSON.stringify(feature));
 
         function scaleCoords(coords) {
-
             let cx = 0, cy = 0, total = 0;
-
             coords.forEach(ring => {
                 ring.forEach(p => {
                     cx += p[0];
@@ -160,10 +165,8 @@ map.on('load', function () {
                     total++;
                 });
             });
-
             cx /= total;
             cy /= total;
-
             return coords.map(ring =>
                 ring.map(p => [
                     cx + (p[0] - cx) * scale,
@@ -189,19 +192,24 @@ map.on('load', function () {
 
         const departamento = e.features[0].properties.NOMBDEP;
 
-        // 🔥 AUMENTO FUERTE COMO ORIGINAL
-        const scaled = scaleFeature(e.features[0], 1.9);
-
-        map.getSource('hover-source').setData({
-            type: "FeatureCollection",
-            features: [scaled]
-        });
-
-        const features = map.querySourceFeatures('departamentos-info', {
+        // 🔥 BUSCAR TODAS LAS PARTES DEL DEPARTAMENTO
+        const featuresDiv = map.querySourceFeatures('departamentos-div', {
             filter: ['==', ['get', 'NOMBDEP'], departamento]
         });
 
-        const props = features[0].properties;
+        const scaledFeatures = featuresDiv.map(f => scaleFeature(f, 1.9));
+
+        map.getSource('hover-source').setData({
+            type: "FeatureCollection",
+            features: scaledFeatures
+        });
+
+        // 🔎 INDICADORES DESDE ORIGINAL
+        const featuresInfo = map.querySourceFeatures('departamentos-info', {
+            filter: ['==', ['get', 'NOMBDEP'], departamento]
+        });
+
+        const props = featuresInfo[0].properties;
 
         if (popup) popup.remove();
 
@@ -216,7 +224,6 @@ map.on('load', function () {
                 <b>% Contrato:</b> ${props.CONTRATO}%<br>
                 <b>% Adjudicado:</b> ${props.ADJUDICADO}%<br>
                 <b>% En Invitación:</b> ${props["EN INVITACIÓN"]}%<br><br>
-
                 <div style="text-align:center;">
                     <a href="detalle.html?dep=${encodeURIComponent(departamento)}"
                        style="
