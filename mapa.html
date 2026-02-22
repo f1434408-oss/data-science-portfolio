@@ -14,8 +14,6 @@ body {
     background: #111;
 }
 
-/* ================= PANEL ================= */
-
 #panel {
     position: absolute;
     width: 360px;
@@ -23,25 +21,10 @@ body {
     background: linear-gradient(180deg, #111 0%, #1b1b1b 100%);
     color: white;
     padding: 32px;
-    z-index: 1;
+    z-index: 2;
     font-size: 16px;
     line-height: 1.7;
 }
-
-#panel h1 {
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 8px;
-}
-
-#panel h2 {
-    font-size: 18px;
-    opacity: 0.75;
-    margin-top: 0;
-    margin-bottom: 22px;
-}
-
-/* ================= MAPA ================= */
 
 #map {
     position: absolute;
@@ -49,8 +32,6 @@ body {
     width: calc(100% - 360px);
     height: 100%;
 }
-
-/* ================= POPUP ================= */
 
 .mapboxgl-popup-content {
     background: #1c1c1c;
@@ -60,9 +41,6 @@ body {
     padding: 20px;
 }
 
-.mapboxgl-popup-tip {
-    border-top-color: #1c1c1c !important;
-}
 </style>
 </head>
 
@@ -76,30 +54,6 @@ body {
         <strong>IIEE:</strong> 67,055<br>
         <strong>Usuarios:</strong> 4,187,782<br>
         <strong>Ítems:</strong> 711
-    </p>
-
-    <hr style="opacity:0.2;">
-
-    <p><strong>Estado:</strong></p>
-    <p>
-        • CONTRATO: 38%<br>
-        • ADJUDICADO: 20%<br>
-        • EN INVITACIÓN: 43%
-    </p>
-
-    <hr style="opacity:0.2;">
-
-    <p><strong>Modalidad:</strong></p>
-    <p>
-        • COMIDA CALIENTE: 74%<br>
-        • COMIDA LISTA PARA CONSUMO: 26%
-    </p>
-
-    <hr style="opacity:0.2;">
-
-    <p><strong>Mapa interactivo por departamento</strong></p>
-    <p style="opacity:0.8;">
-        Pasa el mouse sobre un departamento para ver el resumen y acceder al detalle.
     </p>
 </div>
 
@@ -120,19 +74,18 @@ let popup;
 
 map.on('load', function () {
 
-    /* 🔵 Cambiar océano a celeste elegante */
     map.setPaintProperty('water', 'fill-color', '#3fa9f5');
 
-    /* 🔕 Ocultar etiquetas */
-    map.getStyle().layers.forEach(layer => {
-        if (layer.type === 'symbol') {
-            map.setLayoutProperty(layer.id, 'visibility', 'none');
-        }
-    });
-
-    map.addSource('departamentos', {
+    // 🔵 SOURCE ESTÉTICO (DIVIDIDO)
+    map.addSource('departamentos-div', {
         type: 'geojson',
         data: 'geo_pae_departamental_dividido.geojson'
+    });
+
+    // 🟢 SOURCE INDICADORES (ORIGINAL)
+    map.addSource('departamentos-info', {
+        type: 'geojson',
+        data: 'geo_pae_departamental.geojson'
     });
 
     const colorExpression = [
@@ -144,10 +97,11 @@ map.on('load', function () {
         '#ccc'
     ];
 
+    // CAPA BASE
     map.addLayer({
         id: 'fill-layer',
         type: 'fill',
-        source: 'departamentos',
+        source: 'departamentos-div',
         paint: {
             'fill-color': colorExpression,
             'fill-opacity': 0.9
@@ -157,18 +111,93 @@ map.on('load', function () {
     map.addLayer({
         id: 'border-layer',
         type: 'line',
-        source: 'departamentos',
+        source: 'departamentos-div',
         paint: {
-            'line-color': 'rgba(255,255,255,0.5)',
+            'line-color': 'rgba(255,255,255,0.4)',
             'line-width': 1.2
         }
     });
+
+    // SOURCE PARA HOVER AGRANDADO
+    map.addSource('hover-source', {
+        type: 'geojson',
+        data: { type: "FeatureCollection", features: [] }
+    });
+
+    map.addLayer({
+        id: 'hover-fill',
+        type: 'fill',
+        source: 'hover-source',
+        paint: {
+            'fill-color': colorExpression,
+            'fill-opacity': 1
+        }
+    });
+
+    map.addLayer({
+        id: 'hover-border',
+        type: 'line',
+        source: 'hover-source',
+        paint: {
+            'line-color': '#ffffff',
+            'line-width': 5
+        }
+    });
+
+    // FUNCIÓN ESCALAR (Polygon y MultiPolygon)
+    function scaleFeature(feature, scale) {
+
+        const clone = JSON.parse(JSON.stringify(feature));
+
+        function scaleCoords(coords) {
+
+            let cx = 0, cy = 0, total = 0;
+
+            coords.forEach(ring => {
+                ring.forEach(p => {
+                    cx += p[0];
+                    cy += p[1];
+                    total++;
+                });
+            });
+
+            cx /= total;
+            cy /= total;
+
+            return coords.map(ring =>
+                ring.map(p => [
+                    cx + (p[0] - cx) * scale,
+                    cy + (p[1] - cy) * scale
+                ])
+            );
+        }
+
+        if (clone.geometry.type === "Polygon") {
+            clone.geometry.coordinates = scaleCoords(clone.geometry.coordinates);
+        }
+
+        if (clone.geometry.type === "MultiPolygon") {
+            clone.geometry.coordinates = clone.geometry.coordinates.map(poly =>
+                scaleCoords(poly)
+            );
+        }
+
+        return clone;
+    }
 
     map.on('mousemove', 'fill-layer', function (e) {
 
         const departamento = e.features[0].properties.NOMBDEP;
 
-        const features = map.querySourceFeatures('departamentos', {
+        // 🔥 AUMENTO FUERTE COMO ORIGINAL
+        const scaled = scaleFeature(e.features[0], 1.9);
+
+        map.getSource('hover-source').setData({
+            type: "FeatureCollection",
+            features: [scaled]
+        });
+
+        const features = map.querySourceFeatures('departamentos-info', {
             filter: ['==', ['get', 'NOMBDEP'], departamento]
         });
 
@@ -176,7 +205,7 @@ map.on('load', function () {
 
         if (popup) popup.remove();
 
-        popup = new mapboxgl.Popup({ offset: 20 })
+        popup = new mapboxgl.Popup({ offset: 25 })
             .setLngLat(e.lngLat)
             .setHTML(`
                 <b style="font-size:18px;">${departamento}</b>
@@ -207,11 +236,11 @@ map.on('load', function () {
     });
 
     map.on('mouseleave', 'fill-layer', function () {
+        map.getSource('hover-source').setData({
+            type: "FeatureCollection",
+            features: []
+        });
         if (popup) popup.remove();
-    });
-
-    map.on('mouseenter', 'fill-layer', function () {
-        map.getCanvas().style.cursor = 'pointer';
     });
 
 });
