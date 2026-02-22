@@ -1,113 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8" />
-<title>BASE CONTROL PC 2026 PAE</title>
-
-<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet"/>
-
-<style>
-body {
-    margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: #f4f7fb;
-}
-
-#panel {
-    position: absolute;
-    width: 360px;
-    height: 100%;
-    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-    color: white;
-    padding: 32px;
-    z-index: 1;
-    font-size: 16px;
-    line-height: 1.7;
-    box-shadow: 4px 0 20px rgba(0,0,0,0.25);
-}
-
-#panel h2 {
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    margin-bottom: 28px;
-}
-
-#map {
-    position: absolute;
-    left: 360px;
-    width: calc(100% - 360px);
-    height: 100%;
-}
-
-.mapboxgl-popup-content {
-    background: #1c1c1c;
-    color: white;
-    border-radius: 14px;
-    font-size: 16px;
-    padding: 20px;
-}
-
-.mapboxgl-popup-tip {
-    border-top-color: #1c1c1c !important;
-}
-
-.legend {
-    position: absolute;
-    bottom: 30px;
-    right: 30px;
-    background: rgba(15,15,15,0.95);
-    padding: 22px;
-    border-radius: 16px;
-    font-size: 16px;
-    color: white;
-    box-shadow: 0 0 25px rgba(0,0,0,0.4);
-}
-
-.legend span {
-    display: inline-block;
-    width: 18px;
-    height: 18px;
-    margin-right: 10px;
-    border-radius: 4px;
-}
-</style>
-</head>
-
-<body>
-
-<div id="panel">
-    <h2>BASE CONTROL PC 2026 PAE</h2>
-
-    <p><b>IIEE:</b> 67,055<br>
-    <b>Usuarios:</b> 4,187,782<br>
-    <b>Ítems:</b> 711</p>
-
-    <hr style="opacity:0.2;">
-
-    <p><b>Estado:</b><br>
-    • CONTRATO: 38%<br>
-    • ADJUDICADO: 20%<br>
-    • EN INVITACIÓN: 43%</p>
-</div>
-
-<div id="map"></div>
-
-<div class="legend">
-    <b>Distribución Estado</b>
-    <div><span style="background:#27AE60;"></span>Contrato</div>
-    <div><span style="background:#F1C40F;"></span>Adjudicado</div>
-    <div><span style="background:#E74C3C;"></span>Invitación</div>
-</div>
-
 <script>
-
-mapboxgl.accessToken = "pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwdXBpN3o2eCJ9.lM43dWvXvojawo82gZFOIw";
+mapboxgl.accessToken = "TU_TOKEN_AQUI";
 
 const map = new mapboxgl.Map({
     container: 'map',
-    style: 'mapbox://styles/mapbox/light-v11',
+    style: 'mapbox://styles/mapbox/dark-v11',
     center: [-74.8, -9.3],
     zoom: 5.4
 });
@@ -116,24 +12,19 @@ let popup;
 
 map.on('load', function () {
 
-    /* Ocultar etiquetas */
+    /* 🔕 Ocultar etiquetas */
     map.getStyle().layers.forEach(layer => {
         if (layer.type === 'symbol') {
             map.setLayoutProperty(layer.id, 'visibility', 'none');
         }
     });
 
-    /* Océano celeste tipo pydeck */
-    map.getStyle().layers.forEach(layer => {
-        if (layer.id.includes('water')) {
-            map.setPaintProperty(layer.id, 'fill-color', '#A7D8F5');
-        }
-    });
+    /* 🌊 Color del mar */
+    map.setPaintProperty('water', 'fill-color', '#0e2636');
 
-    /* Crear source vacío */
     map.addSource('departamentos', {
         type: 'geojson',
-        data: { type: "FeatureCollection", features: [] }
+        data: 'geo_pae_departamental.geojson'
     });
 
     map.addSource('hover-departamento', {
@@ -141,58 +32,12 @@ map.on('load', function () {
         data: { type: "FeatureCollection", features: [] }
     });
 
-    /* Función patrón proporcional */
-    function createPattern(contrato, adjudicado, invitacion) {
-
-        const canvas = document.createElement('canvas');
-        canvas.width = 100;
-        canvas.height = 100;
-        const ctx = canvas.getContext('2d');
-
-        const total = contrato + adjudicado + invitacion || 1;
-
-        const cWidth = (contrato / total) * 100;
-        const aWidth = (adjudicado / total) * 100;
-        const iWidth = (invitacion / total) * 100;
-
-        ctx.fillStyle = "#27AE60";
-        ctx.fillRect(0, 0, cWidth, 100);
-
-        ctx.fillStyle = "#F1C40F";
-        ctx.fillRect(cWidth, 0, aWidth, 100);
-
-        ctx.fillStyle = "#E74C3C";
-        ctx.fillRect(cWidth + aWidth, 0, iWidth, 100);
-
-        return canvas;
-    }
-
-    /* Cargar GeoJSON correctamente */
-    fetch('geo_pae_departamental.geojson')
-        .then(response => response.json())
-        .then(data => {
-
-            data.features.forEach((feature, index) => {
-
-                if (!feature.properties) return;
-
-                const contrato = Number(feature.properties.CONTRATO) || 0;
-                const adjudicado = Number(feature.properties.ADJUDICADO) || 0;
-                const invitacion = Number(feature.properties["EN INVITACIÓN"]) || 0;
-
-                const patternName = "pattern-" + index;
-
-                const canvas = createPattern(contrato, adjudicado, invitacion);
-
-                if (!map.hasImage(patternName)) {
-                    map.addImage(patternName, canvas, { pixelRatio: 2 });
-                }
-
-                feature.properties["pattern-name"] = patternName;
-            });
-
-            map.getSource('departamentos').setData(data);
-        });
+    const colorExpression = [
+        'case',
+        ['<=', ['get', 'CONTRATO'], 33], '#E74C3C',
+        ['<=', ['get', 'CONTRATO'], 66], '#F1C40F',
+        '#27AE60'
+    ];
 
     /* Capa base */
     map.addLayer({
@@ -200,8 +45,8 @@ map.on('load', function () {
         type: 'fill',
         source: 'departamentos',
         paint: {
-            'fill-pattern': ['get', 'pattern-name'],
-            'fill-opacity': 0.9
+            'fill-color': colorExpression,
+            'fill-opacity': 0.85
         }
     });
 
@@ -210,22 +55,23 @@ map.on('load', function () {
         type: 'line',
         source: 'departamentos',
         paint: {
-            'line-color': 'rgba(255,255,255,0.6)',
+            'line-color': 'rgba(255,255,255,0.4)',
             'line-width': 1
         }
     });
 
-    /* Hover layers */
+    /* Hover fill */
     map.addLayer({
         id: 'hover-fill',
         type: 'fill',
         source: 'hover-departamento',
         paint: {
-            'fill-pattern': ['get', 'pattern-name'],
+            'fill-color': colorExpression,
             'fill-opacity': 1
         }
     });
 
+    /* Hover borde */
     map.addLayer({
         id: 'hover-border',
         type: 'line',
@@ -237,12 +83,15 @@ map.on('load', function () {
     });
 
     function scaleFeature(feature, scale) {
-
         const newFeature = JSON.parse(JSON.stringify(feature));
         const coords = newFeature.geometry.coordinates[0];
 
         let cx = 0, cy = 0;
-        coords.forEach(p => { cx += p[0]; cy += p[1]; });
+        coords.forEach(p => {
+            cx += p[0];
+            cy += p[1];
+        });
+
         cx /= coords.length;
         cy /= coords.length;
 
@@ -271,26 +120,23 @@ map.on('load', function () {
             .setHTML(`
                 <b style="font-size:18px;">${feature.properties.NOMBDEP}</b>
                 <hr style="opacity:0.3;">
+                <b>Ítems:</b> ${feature.properties.ITEMS_TOTAL}<br><br>
                 <b>% Contrato:</b> ${feature.properties.CONTRATO}%<br>
                 <b>% Adjudicado:</b> ${feature.properties.ADJUDICADO}%<br>
-                <b>% Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%
+                <b>% En Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%<br><br>
+                <b>IIEE:</b> ${feature.properties.IIEE_TOTAL}<br>
+                <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}
             `)
             .addTo(map);
     });
 
     map.on('mouseleave', 'fill-layer', function () {
-
         map.getSource('hover-departamento').setData({
             type: "FeatureCollection",
             features: []
         });
-
         if (popup) popup.remove();
     });
 
 });
-
 </script>
-
-</body>
-</html>
