@@ -24,9 +24,6 @@ body{
     color:white;
     padding:45px;
     z-index:1;
-    display:flex;
-    flex-direction:column;
-    justify-content:flex-start;
 }
 
 #panel h2{
@@ -34,7 +31,7 @@ body{
     margin-bottom:30px;
 }
 
-#panel .kpi{
+.kpi{
     font-size:22px;
     margin-bottom:8px;
 }
@@ -43,8 +40,6 @@ body{
     margin:25px 0;
     opacity:.15;
 }
-
-/* ================= LEYENDA (AHORA DEBAJO DE KPIs) ================= */
 
 .legend{
     margin-top:20px;
@@ -68,7 +63,7 @@ body{
     height:100%;
 }
 
-/* ================= POPUP RESTAURADO ================= */
+/* ================= POPUP ================= */
 
 .mapboxgl-popup-content{
     background:#1c1c1c;
@@ -225,10 +220,21 @@ map.addSource('departamentos',{
     data:'geo_pae_departamental.geojson'
 });
 
+map.addSource('hover-departamento',{
+    type:'geojson',
+    data:{type:"FeatureCollection",features:[]}
+});
+
 const colorExpression=[
     'case',
-    ['>=',['get','CONTRATO'],['get','ADJUDICADO']],'#27AE60',
-    ['>=',['get','ADJUDICADO'],['get','EN INVITACIÓN']],'#F1C40F',
+    ['all',
+        ['>=',['get','CONTRATO'],['get','ADJUDICADO']],
+        ['>=',['get','CONTRATO'],['get','EN INVITACIÓN']]
+    ],'#27AE60',
+    ['all',
+        ['>=',['get','ADJUDICADO'],['get','CONTRATO']],
+        ['>=',['get','ADJUDICADO'],['get','EN INVITACIÓN']]
+    ],'#F1C40F',
     '#E74C3C'
 ];
 
@@ -246,35 +252,74 @@ map.addLayer({
     paint:{'line-color':'rgba(255,255,255,0.4)','line-width':1.2}
 });
 
-/* ================= POPUP COMPLETO RESTAURADO ================= */
+map.addLayer({
+    id:'hover-fill',
+    type:'fill',
+    source:'hover-departamento',
+    paint:{'fill-color':colorExpression,'fill-opacity':1}
+});
+
+map.addLayer({
+    id:'hover-border',
+    type:'line',
+    source:'hover-departamento',
+    paint:{'line-color':'#ffffff','line-width':3}
+});
+
+function scaleFeature(feature,scale){
+    const newFeature=JSON.parse(JSON.stringify(feature));
+    const coords=newFeature.geometry.coordinates[0];
+    let cx=0,cy=0;
+    coords.forEach(p=>{cx+=p[0];cy+=p[1];});
+    cx/=coords.length;
+    cy/=coords.length;
+    newFeature.geometry.coordinates[0]=coords.map(p=>[
+        cx+(p[0]-cx)*scale,
+        cy+(p[1]-cy)*scale
+    ]);
+    return newFeature;
+}
 
 map.on('mouseenter','fill-layer',function(e){
 
-const feature=e.features[0];
+    const feature=e.features[0];
+    const scaled=scaleFeature(feature,2.4);
 
-if(popup)popup.remove();
+    map.getSource('hover-departamento').setData({
+        type:"FeatureCollection",
+        features:[scaled]
+    });
 
-popup=new mapboxgl.Popup({offset:20})
-.setLngLat(e.lngLat)
-.setHTML(`
-<b style="font-size:24px;">${feature.properties.NOMBDEP}</b>
-<hr style="opacity:.3;">
-<b>Ítems:</b> ${feature.properties.ITEMS_TOTAL}<br><br>
-<b>Contrato:</b> ${feature.properties.CONTRATO}%<br>
-<b>Adjudicado:</b> ${feature.properties.ADJUDICADO}%<br>
-<b>Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%<br><br>
-<b>IIEE:</b> ${feature.properties.IIEE_TOTAL}<br>
-<b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}<br><br>
-<a href="#" id="ver-detalle" style="color:#48a0ff;font-weight:bold;">
-Ver detalle completo</a>
-`)
-.addTo(map);
+    if(popup)popup.remove();
 
-document.getElementById('ver-detalle').addEventListener('click',function(evt){
-evt.preventDefault();
-abrirModalConTabla(feature.properties.NOMBDEP);
+    popup=new mapboxgl.Popup({offset:20})
+    .setLngLat(e.lngLat)
+    .setHTML(`
+    <b style="font-size:24px;">${feature.properties.NOMBDEP}</b>
+    <hr style="opacity:.3;">
+    <b>Ítems:</b> ${feature.properties.ITEMS_TOTAL}<br><br>
+    <b>Contrato:</b> ${feature.properties.CONTRATO}%<br>
+    <b>Adjudicado:</b> ${feature.properties.ADJUDICADO}%<br>
+    <b>Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%<br><br>
+    <b>IIEE:</b> ${feature.properties.IIEE_TOTAL}<br>
+    <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}<br><br>
+    <a href="#" id="ver-detalle" style="color:#48a0ff;font-weight:bold;">
+    Ver detalle completo</a>
+    `)
+    .addTo(map);
+
+    document.getElementById('ver-detalle').addEventListener('click',function(evt){
+        evt.preventDefault();
+        abrirModalConTabla(feature.properties.NOMBDEP);
+    });
+
 });
 
+map.on('mouseleave','fill-layer',function(){
+    map.getSource('hover-departamento').setData({
+        type:"FeatureCollection",
+        features:[]
+    });
 });
 
 });
