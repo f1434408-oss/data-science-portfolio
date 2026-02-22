@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Mapa PAE Perú</title>
+<title>BASE CONTROL PC 2026 PAE</title>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet"/>
@@ -11,7 +11,7 @@
 body {
     margin: 0;
     font-family: 'Segoe UI', sans-serif;
-    background: #111;
+    background: #f4f7fb;
 }
 
 /* ================= PANEL ================= */
@@ -20,17 +20,20 @@ body {
     position: absolute;
     width: 360px;
     height: 100%;
-    background: linear-gradient(180deg, #111 0%, #1b1b1b 100%);
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
     color: white;
     padding: 32px;
     z-index: 1;
     font-size: 16px;
     line-height: 1.7;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.25);
 }
 
 #panel h2 {
-    font-size: 24px;
-    margin-bottom: 22px;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    margin-bottom: 28px;
 }
 
 /* ================= MAPA ================= */
@@ -62,20 +65,12 @@ body {
     position: absolute;
     bottom: 30px;
     right: 30px;
-    background: rgba(15,15,15,0.97);
+    background: rgba(15,15,15,0.95);
     padding: 22px;
     border-radius: 16px;
     font-size: 16px;
     color: white;
-    box-shadow: 0 0 25px rgba(0,0,0,0.6);
-}
-
-.legend b {
-    font-size: 17px;
-}
-
-.legend div {
-    margin-top: 10px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.4);
 }
 
 .legend span {
@@ -91,7 +86,7 @@ body {
 <body>
 
 <div id="panel">
-    <h2>PE Estadística Nacional</h2>
+    <h2>BASE CONTROL PC 2026 PAE</h2>
 
     <p><b>IIEE:</b> 67,055<br>
     <b>Usuarios:</b> 4,187,782<br>
@@ -114,10 +109,10 @@ body {
 <div id="map"></div>
 
 <div class="legend">
-    <b>% Contrato</b>
-    <div><span style="background:#E74C3C;"></span>0 – 33%</div>
-    <div><span style="background:#F1C40F;"></span>34 – 66%</div>
-    <div><span style="background:#27AE60;"></span>67 – 100%</div>
+    <b>Distribución Estado</b>
+    <div><span style="background:#27AE60;"></span>Contrato</div>
+    <div><span style="background:#F1C40F;"></span>Adjudicado</div>
+    <div><span style="background:#E74C3C;"></span>Invitación</div>
 </div>
 
 <script>
@@ -126,7 +121,7 @@ mapboxgl.accessToken = "pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwd
 
 const map = new mapboxgl.Map({
     container: 'map',
-    style: 'mapbox://styles/mapbox/dark-v11',
+    style: 'mapbox://styles/mapbox/light-v11',
     center: [-74.8, -9.3],
     zoom: 5.4
 });
@@ -135,15 +130,19 @@ let popup;
 
 map.on('load', function () {
 
-    /* 🔕 Ocultar etiquetas */
+    /* Ocultar etiquetas */
     map.getStyle().layers.forEach(layer => {
         if (layer.type === 'symbol') {
             map.setLayoutProperty(layer.id, 'visibility', 'none');
         }
     });
 
-    /* 🌊 Mar elegante */
-    map.setPaintProperty('water', 'fill-color', '#0e2636');
+    /* Océano celeste tipo pydeck */
+    map.getStyle().layers.forEach(layer => {
+        if (layer.id.includes('water')) {
+            map.setPaintProperty(layer.id, 'fill-color', '#A7D8F5');
+        }
+    });
 
     map.addSource('departamentos', {
         type: 'geojson',
@@ -155,21 +154,64 @@ map.on('load', function () {
         data: { type: "FeatureCollection", features: [] }
     });
 
-    const colorExpression = [
-        'case',
-        ['<=', ['get', 'CONTRATO'], 33], '#E74C3C',
-        ['<=', ['get', 'CONTRATO'], 66], '#F1C40F',
-        '#27AE60'
-    ];
+    function createPattern(contrato, adjudicado, invitacion) {
 
-    /* Capa base */
+        const canvas = document.createElement('canvas');
+        canvas.width = 100;
+        canvas.height = 100;
+
+        const ctx = canvas.getContext('2d');
+
+        const total = contrato + adjudicado + invitacion;
+
+        const cWidth = (contrato / total) * 100;
+        const aWidth = (adjudicado / total) * 100;
+        const iWidth = (invitacion / total) * 100;
+
+        ctx.fillStyle = "#27AE60";
+        ctx.fillRect(0, 0, cWidth, 100);
+
+        ctx.fillStyle = "#F1C40F";
+        ctx.fillRect(cWidth, 0, aWidth, 100);
+
+        ctx.fillStyle = "#E74C3C";
+        ctx.fillRect(cWidth + aWidth, 0, iWidth, 100);
+
+        return canvas;
+    }
+
+    map.on('sourcedata', function(e) {
+
+        if (e.sourceId !== 'departamentos' || !e.isSourceLoaded) return;
+
+        const features = map.querySourceFeatures('departamentos');
+
+        features.forEach((feature, index) => {
+
+            const contrato = feature.properties.CONTRATO;
+            const adjudicado = feature.properties.ADJUDICADO;
+            const invitacion = feature.properties["EN INVITACIÓN"];
+
+            const patternName = "pattern-" + index;
+
+            const canvas = createPattern(contrato, adjudicado, invitacion);
+
+            if (!map.hasImage(patternName)) {
+                map.addImage(patternName, canvas, { pixelRatio: 2 });
+            }
+
+            feature.properties["pattern-name"] = patternName;
+        });
+
+    });
+
     map.addLayer({
         id: 'fill-layer',
         type: 'fill',
         source: 'departamentos',
         paint: {
-            'fill-color': colorExpression,
-            'fill-opacity': 0.85
+            'fill-pattern': ['get', 'pattern-name'],
+            'fill-opacity': 0.9
         }
     });
 
@@ -178,23 +220,21 @@ map.on('load', function () {
         type: 'line',
         source: 'departamentos',
         paint: {
-            'line-color': 'rgba(255,255,255,0.4)',
+            'line-color': 'rgba(255,255,255,0.6)',
             'line-width': 1
         }
     });
 
-    /* Hover fill */
     map.addLayer({
         id: 'hover-fill',
         type: 'fill',
         source: 'hover-departamento',
         paint: {
-            'fill-color': colorExpression,
+            'fill-pattern': ['get', 'pattern-name'],
             'fill-opacity': 1
         }
     });
 
-    /* Hover borde blanco fuerte */
     map.addLayer({
         id: 'hover-border',
         type: 'line',
@@ -227,7 +267,6 @@ map.on('load', function () {
 
         const feature = e.features[0];
 
-        /* 🔥 ESCALA MUY GRANDE */
         const scaled = scaleFeature(feature, 2.4);
 
         map.getSource('hover-departamento').setData({
@@ -263,6 +302,7 @@ map.on('load', function () {
     });
 
 });
+
 </script>
 
 </body>
