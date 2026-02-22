@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Detalle por Departamento</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #111;
+    color: white;
+}
+
+/* HEADER */
+header {
+    padding: 25px 40px;
+    background: #1b1b1b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+/* BOTÓN */
+button {
+    background: #27AE60;
+    border: none;
+    padding: 8px 14px;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+/* CONTENIDO */
+.container {
+    padding: 30px 40px;
+}
+
+/* RESUMEN */
+.summary-box {
+    background: #1b1b1b;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    font-size: 15px;
+}
+
+/* TABLA */
+.scroll-table {
+    max-height: 500px;
+    overflow-y: auto;
+    border-radius: 12px;
+    border: 1px solid #222;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th, td {
+    padding: 10px;
+    border-bottom: 1px solid #222;
+    text-align: left;
+}
+
+th {
+    background: #222;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+tr:hover {
+    background: #1f1f1f;
+}
+
+/* MENSAJE SIN DATOS */
+.no-data {
+    margin-top: 20px;
+    font-size: 15px;
+    color: #aaa;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1 id="titulo">Detalle</h1>
+    <button onclick="window.location.href='mapa.html'">← Volver al mapa</button>
+</header>
+
+<div class="container">
+
+    <div class="summary-box" id="resumen"></div>
+
+    <div class="scroll-table">
+        <table id="tabla">
+            <thead>
+                <tr id="thead-row"></tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
+
+    <div id="mensaje" class="no-data"></div>
+
+</div>
+
+<script>
+
+// 1️⃣ Leer parámetro de URL
+const params = new URLSearchParams(window.location.search);
+const departamentoSeleccionado = params.get("dep");
+
+if (!departamentoSeleccionado) {
+    document.getElementById("titulo").innerText = "Departamento no especificado";
+}
+
+// 2️⃣ Actualizar título
+document.getElementById("titulo").innerText =
+    "Detalle - " + departamentoSeleccionado;
+
+// 3️⃣ Cargar dataset
+fetch("base_pae.json")
+  .then(response => response.json())
+  .then(data => {
+
+      // 4️⃣ Filtrar por departamento
+      const datosFiltrados = data.filter(d =>
+          d.DEPARTAMENTO === departamentoSeleccionado
+      );
+
+      // 5️⃣ Mostrar resumen
+      document.getElementById("resumen").innerHTML =
+          `<b>Departamento:</b> ${departamentoSeleccionado}<br>
+           <b>Total registros:</b> ${datosFiltrados.length}`;
+
+      if (datosFiltrados.length === 0) {
+          document.getElementById("mensaje").innerText =
+              "No hay datos disponibles para este departamento.";
+          return;
+      }
+
+      // 6️⃣ Construir encabezados dinámicos
+      const columnas = Object.keys(datosFiltrados[0]);
+      const theadRow = document.getElementById("thead-row");
+
+      columnas.forEach(col => {
+          const th = document.createElement("th");
+          th.innerText = col;
+          theadRow.appendChild(th);
+      });
+
+      // 7️⃣ Construir filas
+      const tbody = document.getElementById("tbody");
+
+      datosFiltrados.forEach(fila => {
+          const tr = document.createElement("tr");
+
+          columnas.forEach(col => {
+              const td = document.createElement("td");
+
+              let valor = fila[col];
+
+              // Formatear números grandes
+              if (!isNaN(valor) && valor !== null) {
+                  valor = Number(valor).toLocaleString("es-PE");
+              }
+
+              td.innerText = valor;
+              tr.appendChild(td);
+          });
+
+          tbody.appendChild(tr);
+      });
+
+  })
+  .catch(error => {
+      document.getElementById("mensaje").innerText =
+          "Error cargando datos.";
+      console.error(error);
+  });
+
+</script>
+
+</body>
+</html>
