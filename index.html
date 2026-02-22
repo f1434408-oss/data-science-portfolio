@@ -18,18 +18,21 @@ body {
 
 #panel {
     position: absolute;
-    width: 380px;
+    width: 420px;
     height: 100%;
     background: linear-gradient(180deg, #111 0%, #1b1b1b 100%);
     color: white;
-    padding: 40px;
+    padding: 50px;
     z-index: 1;
-    font-size: 20px;
-    line-height: 1.8;
+    font-size: 24px;
+    line-height: 1.9;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 #panel h2 {
-    font-size: 32px;
+    font-size: 36px;
     font-weight: 700;
     letter-spacing: 1.5px;
     margin-bottom: 30px;
@@ -39,8 +42,8 @@ body {
 
 #map {
     position: absolute;
-    left: 380px;
-    width: calc(100% - 380px);
+    left: 420px;
+    width: calc(100% - 420px);
     height: 100%;
 }
 
@@ -49,9 +52,9 @@ body {
 .mapboxgl-popup-content {
     background: #1c1c1c;
     color: white;
-    border-radius: 16px;
-    font-size: 18px;
-    padding: 24px;
+    border-radius: 18px;
+    font-size: 22px;
+    padding: 28px;
 }
 
 .mapboxgl-popup-tip {
@@ -61,30 +64,25 @@ body {
 /* ================= LEYENDA ================= */
 
 .legend {
-    position: absolute;
-    bottom: 40px;
-    right: 40px;
-    background: rgba(15,15,15,0.97);
-    padding: 26px;
-    border-radius: 18px;
-    font-size: 18px;
-    color: white;
-    box-shadow: 0 0 25px rgba(0,0,0,0.6);
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    font-size: 22px;
 }
 
 .legend b {
-    font-size: 20px;
+    font-size: 24px;
 }
 
 .legend div {
-    margin-top: 12px;
+    margin-top: 14px;
 }
 
 .legend span {
     display: inline-block;
-    width: 22px;
-    height: 22px;
-    margin-right: 12px;
+    width: 24px;
+    height: 24px;
+    margin-right: 14px;
     border-radius: 4px;
 }
 </style>
@@ -93,33 +91,37 @@ body {
 <body>
 
 <div id="panel">
-    <h2>BASE CONTROL PC 2026 PAE</h2>
 
-    <p>
-    <b>IIEE:</b> 67,055<br>
-    <b>Usuarios:</b> 4,187,782<br>
-    <b>Ítems:</b> 711
-    </p>
+    <div>
+        <h2>BASE CONTROL PC 2026 PAE</h2>
 
-    <hr style="opacity:0.2;">
+        <p>
+        <b>IIEE:</b> 67,055<br>
+        <b>Usuarios:</b> 4,187,782<br>
+        <b>Ítems:</b> 711
+        </p>
 
-    <p>
-    <b>Estado:</b><br>
-    • CONTRATO: 38%<br>
-    • ADJUDICADO: 20%<br>
-    • EN INVITACIÓN: 43%
-    </p>
+        <hr style="opacity:0.2;">
+
+        <p>
+        <b>Estado:</b><br>
+        • CONTRATO: 38%<br>
+        • ADJUDICADO: 20%<br>
+        • EN INVITACIÓN: 43%
+        </p>
+    </div>
+
+    <!-- LEYENDA AHORA DENTRO DEL PANEL -->
+    <div class="legend">
+        <b>Estado Mayoritario</b>
+        <div><span style="background:#27AE60;"></span>Contrato</div>
+        <div><span style="background:#F1C40F;"></span>Adjudicado</div>
+        <div><span style="background:#E74C3C;"></span>Invitación</div>
+    </div>
 
 </div>
 
 <div id="map"></div>
-
-<div class="legend">
-    <b>Estado Mayoritario</b>
-    <div><span style="background:#27AE60;"></span>Contrato</div>
-    <div><span style="background:#F1C40F;"></span>Adjudicado</div>
-    <div><span style="background:#E74C3C;"></span>Invitación</div>
-</div>
 
 <script>
 
@@ -143,8 +145,8 @@ map.on('load', function () {
         }
     });
 
-    /* Mar elegante */
-    map.setPaintProperty('water', 'fill-color', '#0e2636');
+    /* OCÉANO CELESTE TIPO PYDECK */
+    map.setPaintProperty('water', 'fill-color', '#5dade2');
 
     map.addSource('departamentos', {
         type: 'geojson',
@@ -156,7 +158,6 @@ map.on('load', function () {
         data: { type: "FeatureCollection", features: [] }
     });
 
-    /* COLOR SEGÚN MAYORÍA */
     const colorExpression = [
         'case',
 
@@ -191,27 +192,7 @@ map.on('load', function () {
         source: 'departamentos',
         paint: {
             'line-color': 'rgba(255,255,255,0.4)',
-            'line-width': 1
-        }
-    });
-
-    map.addLayer({
-        id: 'hover-fill',
-        type: 'fill',
-        source: 'hover-departamento',
-        paint: {
-            'fill-color': colorExpression,
-            'fill-opacity': 1
-        }
-    });
-
-    map.addLayer({
-        id: 'hover-border',
-        type: 'line',
-        source: 'hover-departamento',
-        paint: {
-            'line-color': '#ffffff',
-            'line-width': 3
+            'line-width': 1.2
         }
     });
 
@@ -236,37 +217,28 @@ map.on('load', function () {
     map.on('mousemove', 'fill-layer', function (e) {
 
         const feature = e.features[0];
-        const scaled = scaleFeature(feature, 2.4);
-
-        map.getSource('hover-departamento').setData({
-            type: "FeatureCollection",
-            features: [scaled]
-        });
 
         if (popup) popup.remove();
 
         popup = new mapboxgl.Popup({ offset: 20 })
             .setLngLat(e.lngLat)
             .setHTML(`
-                <b style="font-size:20px;">${feature.properties.NOMBDEP}</b>
+                <b style="font-size:24px;">${feature.properties.NOMBDEP}</b>
                 <hr style="opacity:0.3;">
-                <b>Ítems:</b> ${feature.properties.ITEMS_TOTAL}<br>
+                
+                <b>Ítems:</b> ${feature.properties.ITEMS_TOTAL}<br><br>
+
+                <b>Contrato:</b> ${feature.properties.CONTRATO}%<br>
+                <b>Adjudicado:</b> ${feature.properties.ADJUDICADO}%<br>
+                <b>Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%<br><br>
+
                 <b>IIEE:</b> ${feature.properties.IIEE_TOTAL}<br>
-                <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}<br><br>
-                <b>% Contrato:</b> ${feature.properties.CONTRATO}%<br>
-                <b>% Adjudicado:</b> ${feature.properties.ADJUDICADO}%<br>
-                <b>% Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%
+                <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}
             `)
             .addTo(map);
     });
 
     map.on('mouseleave', 'fill-layer', function () {
-
-        map.getSource('hover-departamento').setData({
-            type: "FeatureCollection",
-            features: []
-        });
-
         if (popup) popup.remove();
     });
 
