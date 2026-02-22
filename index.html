@@ -14,8 +14,6 @@ body {
     background: #f4f7fb;
 }
 
-/* ================= PANEL ================= */
-
 #panel {
     position: absolute;
     width: 360px;
@@ -36,16 +34,12 @@ body {
     margin-bottom: 28px;
 }
 
-/* ================= MAPA ================= */
-
 #map {
     position: absolute;
     left: 360px;
     width: calc(100% - 360px);
     height: 100%;
 }
-
-/* ================= POPUP ================= */
 
 .mapboxgl-popup-content {
     background: #1c1c1c;
@@ -58,8 +52,6 @@ body {
 .mapboxgl-popup-tip {
     border-top-color: #1c1c1c !important;
 }
-
-/* ================= LEYENDA ================= */
 
 .legend {
     position: absolute;
@@ -98,12 +90,6 @@ body {
     • CONTRATO: 38%<br>
     • ADJUDICADO: 20%<br>
     • EN INVITACIÓN: 43%</p>
-
-    <hr style="opacity:0.2;">
-
-    <p><b>Modalidad:</b><br>
-    • COMIDA CALIENTE: 74%<br>
-    • COMIDA LISTA PARA CONSUMO: 26%</p>
 </div>
 
 <div id="map"></div>
@@ -144,9 +130,10 @@ map.on('load', function () {
         }
     });
 
+    /* Crear source vacío */
     map.addSource('departamentos', {
         type: 'geojson',
-        data: 'geo_pae_departamental.geojson'
+        data: { type: "FeatureCollection", features: [] }
     });
 
     map.addSource('hover-departamento', {
@@ -154,15 +141,15 @@ map.on('load', function () {
         data: { type: "FeatureCollection", features: [] }
     });
 
+    /* Función patrón proporcional */
     function createPattern(contrato, adjudicado, invitacion) {
 
         const canvas = document.createElement('canvas');
         canvas.width = 100;
         canvas.height = 100;
-
         const ctx = canvas.getContext('2d');
 
-        const total = contrato + adjudicado + invitacion;
+        const total = contrato + adjudicado + invitacion || 1;
 
         const cWidth = (contrato / total) * 100;
         const aWidth = (adjudicado / total) * 100;
@@ -180,31 +167,34 @@ map.on('load', function () {
         return canvas;
     }
 
-    map.on('sourcedata', function(e) {
+    /* Cargar GeoJSON correctamente */
+    fetch('geo_pae_departamental.geojson')
+        .then(response => response.json())
+        .then(data => {
 
-        if (e.sourceId !== 'departamentos' || !e.isSourceLoaded) return;
+            data.features.forEach((feature, index) => {
 
-        const features = map.querySourceFeatures('departamentos');
+                if (!feature.properties) return;
 
-        features.forEach((feature, index) => {
+                const contrato = Number(feature.properties.CONTRATO) || 0;
+                const adjudicado = Number(feature.properties.ADJUDICADO) || 0;
+                const invitacion = Number(feature.properties["EN INVITACIÓN"]) || 0;
 
-            const contrato = feature.properties.CONTRATO;
-            const adjudicado = feature.properties.ADJUDICADO;
-            const invitacion = feature.properties["EN INVITACIÓN"];
+                const patternName = "pattern-" + index;
 
-            const patternName = "pattern-" + index;
+                const canvas = createPattern(contrato, adjudicado, invitacion);
 
-            const canvas = createPattern(contrato, adjudicado, invitacion);
+                if (!map.hasImage(patternName)) {
+                    map.addImage(patternName, canvas, { pixelRatio: 2 });
+                }
 
-            if (!map.hasImage(patternName)) {
-                map.addImage(patternName, canvas, { pixelRatio: 2 });
-            }
+                feature.properties["pattern-name"] = patternName;
+            });
 
-            feature.properties["pattern-name"] = patternName;
+            map.getSource('departamentos').setData(data);
         });
 
-    });
-
+    /* Capa base */
     map.addLayer({
         id: 'fill-layer',
         type: 'fill',
@@ -225,6 +215,7 @@ map.on('load', function () {
         }
     });
 
+    /* Hover layers */
     map.addLayer({
         id: 'hover-fill',
         type: 'fill',
@@ -266,7 +257,6 @@ map.on('load', function () {
     map.on('mousemove', 'fill-layer', function (e) {
 
         const feature = e.features[0];
-
         const scaled = scaleFeature(feature, 2.4);
 
         map.getSource('hover-departamento').setData({
@@ -281,12 +271,9 @@ map.on('load', function () {
             .setHTML(`
                 <b style="font-size:18px;">${feature.properties.NOMBDEP}</b>
                 <hr style="opacity:0.3;">
-                <b>Ítems:</b> ${feature.properties.ITEMS_TOTAL}<br><br>
                 <b>% Contrato:</b> ${feature.properties.CONTRATO}%<br>
                 <b>% Adjudicado:</b> ${feature.properties.ADJUDICADO}%<br>
-                <b>% En Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%<br><br>
-                <b>IIEE:</b> ${feature.properties.IIEE_TOTAL}<br>
-                <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}
+                <b>% Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%
             `)
             .addTo(map);
     });
