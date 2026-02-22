@@ -26,6 +26,19 @@ body {
     line-height: 1.7;
 }
 
+#panel h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+#panel h2 {
+    font-size: 18px;
+    opacity: 0.75;
+    margin-top: 0;
+    margin-bottom: 22px;
+}
+
 #map {
     position: absolute;
     left: 360px;
@@ -39,6 +52,10 @@ body {
     border-radius: 14px;
     font-size: 16px;
     padding: 20px;
+}
+
+.mapboxgl-popup-tip {
+    border-top-color: #1c1c1c !important;
 }
 </style>
 </head>
@@ -69,7 +86,7 @@ body {
 
 <script>
 
-mapboxgl.accessToken = "pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwdXBpN3o2eCJ9.lM43dWvXvojawo82gZFOIw";
+mapboxgl.accessToken = "pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwdXBpN3o2eCJ9.lM43dWvXvojawo82gZFOIw"; // ⚠️ Reemplaza con tu token
 
 const map = new mapboxgl.Map({
     container: 'map',
@@ -82,15 +99,16 @@ let popup;
 
 map.on('load', function () {
 
+    // MAR
     map.setPaintProperty('water', 'fill-color', '#3fa9f5');
 
-    // SOURCE DIVIDIDO (colores)
+    // GeoJSON dividido (colores)
     map.addSource('departamentos-div', {
         type: 'geojson',
         data: 'geo_pae_departamental_dividido.geojson'
     });
 
-    // SOURCE ORIGINAL (indicadores)
+    // GeoJSON original (indicadores)
     map.addSource('departamentos-info', {
         type: 'geojson',
         data: 'geo_pae_departamental.geojson'
@@ -105,6 +123,7 @@ map.on('load', function () {
         '#ccc'
     ];
 
+    // Capa base
     map.addLayer({
         id: 'fill-layer',
         type: 'fill',
@@ -125,7 +144,7 @@ map.on('load', function () {
         }
     });
 
-    // SOURCE PARA HOVER
+    // Hover source
     map.addSource('hover-source', {
         type: 'geojson',
         data: { type: "FeatureCollection", features: [] }
@@ -151,7 +170,7 @@ map.on('load', function () {
         }
     });
 
-    // FUNCIÓN ESCALAR COMPLETA
+    // Escalar Polygon y MultiPolygon
     function scaleFeature(feature, scale) {
 
         const clone = JSON.parse(JSON.stringify(feature));
@@ -167,6 +186,7 @@ map.on('load', function () {
             });
             cx /= total;
             cy /= total;
+
             return coords.map(ring =>
                 ring.map(p => [
                     cx + (p[0] - cx) * scale,
@@ -190,12 +210,15 @@ map.on('load', function () {
 
     map.on('mousemove', 'fill-layer', function (e) {
 
+        if (!e.features || e.features.length === 0) return;
+
         const departamento = e.features[0].properties.NOMBDEP;
 
-        // 🔥 BUSCAR TODAS LAS PARTES DEL DEPARTAMENTO
         const featuresDiv = map.querySourceFeatures('departamentos-div', {
             filter: ['==', ['get', 'NOMBDEP'], departamento]
         });
+
+        if (!featuresDiv.length) return;
 
         const scaledFeatures = featuresDiv.map(f => scaleFeature(f, 1.9));
 
@@ -204,10 +227,11 @@ map.on('load', function () {
             features: scaledFeatures
         });
 
-        // 🔎 INDICADORES DESDE ORIGINAL
         const featuresInfo = map.querySourceFeatures('departamentos-info', {
             filter: ['==', ['get', 'NOMBDEP'], departamento]
         });
+
+        if (!featuresInfo.length) return;
 
         const props = featuresInfo[0].properties;
 
@@ -248,6 +272,10 @@ map.on('load', function () {
             features: []
         });
         if (popup) popup.remove();
+    });
+
+    map.on('mouseenter', 'fill-layer', function () {
+        map.getCanvas().style.cursor = 'pointer';
     });
 
 });
