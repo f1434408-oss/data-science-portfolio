@@ -14,61 +14,77 @@ body {
     background: #111;
 }
 
+/* ================= PANEL ================= */
+
 #panel {
     position: absolute;
-    width: 360px;
+    width: 380px;
     height: 100%;
     background: linear-gradient(180deg, #111 0%, #1b1b1b 100%);
     color: white;
-    padding: 32px;
+    padding: 40px;
     z-index: 1;
-    font-size: 16px;
-    line-height: 1.7;
+    font-size: 20px;
+    line-height: 1.8;
 }
 
 #panel h2 {
-    font-size: 26px;
+    font-size: 32px;
     font-weight: 700;
     letter-spacing: 1.5px;
-    margin-bottom: 22px;
+    margin-bottom: 30px;
 }
+
+/* ================= MAPA ================= */
 
 #map {
     position: absolute;
-    left: 360px;
-    width: calc(100% - 360px);
+    left: 380px;
+    width: calc(100% - 380px);
     height: 100%;
 }
+
+/* ================= POPUP ================= */
 
 .mapboxgl-popup-content {
     background: #1c1c1c;
     color: white;
-    border-radius: 14px;
-    font-size: 16px;
-    padding: 20px;
+    border-radius: 16px;
+    font-size: 18px;
+    padding: 24px;
 }
 
 .mapboxgl-popup-tip {
     border-top-color: #1c1c1c !important;
 }
 
+/* ================= LEYENDA ================= */
+
 .legend {
     position: absolute;
-    bottom: 30px;
-    right: 30px;
+    bottom: 40px;
+    right: 40px;
     background: rgba(15,15,15,0.97);
-    padding: 22px;
-    border-radius: 16px;
-    font-size: 16px;
+    padding: 26px;
+    border-radius: 18px;
+    font-size: 18px;
     color: white;
     box-shadow: 0 0 25px rgba(0,0,0,0.6);
 }
 
+.legend b {
+    font-size: 20px;
+}
+
+.legend div {
+    margin-top: 12px;
+}
+
 .legend span {
     display: inline-block;
-    width: 18px;
-    height: 18px;
-    margin-right: 10px;
+    width: 22px;
+    height: 22px;
+    margin-right: 12px;
     border-radius: 4px;
 }
 </style>
@@ -79,18 +95,30 @@ body {
 <div id="panel">
     <h2>BASE CONTROL PC 2026 PAE</h2>
 
-    <p><b>IIEE:</b> 67,055<br>
+    <p>
+    <b>IIEE:</b> 67,055<br>
     <b>Usuarios:</b> 4,187,782<br>
-    <b>Ítems:</b> 711</p>
+    <b>Ítems:</b> 711
+    </p>
+
+    <hr style="opacity:0.2;">
+
+    <p>
+    <b>Estado:</b><br>
+    • CONTRATO: 38%<br>
+    • ADJUDICADO: 20%<br>
+    • EN INVITACIÓN: 43%
+    </p>
+
 </div>
 
 <div id="map"></div>
 
 <div class="legend">
-    <b>% Contrato</b>
-    <div><span style="background:#E74C3C;"></span>0 – 33%</div>
-    <div><span style="background:#F1C40F;"></span>34 – 66%</div>
-    <div><span style="background:#27AE60;"></span>67 – 100%</div>
+    <b>Estado Mayoritario</b>
+    <div><span style="background:#27AE60;"></span>Contrato</div>
+    <div><span style="background:#F1C40F;"></span>Adjudicado</div>
+    <div><span style="background:#E74C3C;"></span>Invitación</div>
 </div>
 
 <script>
@@ -128,11 +156,23 @@ map.on('load', function () {
         data: { type: "FeatureCollection", features: [] }
     });
 
+    /* COLOR SEGÚN MAYORÍA */
     const colorExpression = [
         'case',
-        ['<=', ['get', 'CONTRATO'], 33], '#E74C3C',
-        ['<=', ['get', 'CONTRATO'], 66], '#F1C40F',
-        '#27AE60'
+
+        ['all',
+            ['>=', ['get', 'CONTRATO'], ['get', 'ADJUDICADO']],
+            ['>=', ['get', 'CONTRATO'], ['get', 'EN INVITACIÓN']]
+        ],
+        '#27AE60',
+
+        ['all',
+            ['>=', ['get', 'ADJUDICADO'], ['get', 'CONTRATO']],
+            ['>=', ['get', 'ADJUDICADO'], ['get', 'EN INVITACIÓN']]
+        ],
+        '#F1C40F',
+
+        '#E74C3C'
     ];
 
     map.addLayer({
@@ -208,8 +248,11 @@ map.on('load', function () {
         popup = new mapboxgl.Popup({ offset: 20 })
             .setLngLat(e.lngLat)
             .setHTML(`
-                <b style="font-size:18px;">${feature.properties.NOMBDEP}</b>
+                <b style="font-size:20px;">${feature.properties.NOMBDEP}</b>
                 <hr style="opacity:0.3;">
+                <b>Ítems:</b> ${feature.properties.ITEMS_TOTAL}<br>
+                <b>IIEE:</b> ${feature.properties.IIEE_TOTAL}<br>
+                <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}<br><br>
                 <b>% Contrato:</b> ${feature.properties.CONTRATO}%<br>
                 <b>% Adjudicado:</b> ${feature.properties.ADJUDICADO}%<br>
                 <b>% Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%
