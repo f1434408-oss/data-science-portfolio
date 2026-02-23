@@ -159,6 +159,7 @@ tbody tr:hover{background:#1f1f1f;transition:.2s;}
     <div class="kpi"><b>IIEE:</b> 67,055</div>
     <div class="kpi"><b>Usuarios:</b> 4,187,782</div>
     <div class="kpi"><b>Ítems:</b> 711</div>
+    <div class="kpi"><b>Total Nacional de Proveedores:</b> 162</div>
 
     <hr>
 
@@ -189,7 +190,7 @@ tbody tr:hover{background:#1f1f1f;transition:.2s;}
 
 <script>
 
-mapboxgl.accessToken="pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwdXBpN3o2eCJ9.lM43dWvXvojawo82gZFOIw";
+mapboxgl.accessToken="TU_TOKEN_AQUI";
 
 const map=new mapboxgl.Map({
     container:'map',
@@ -204,6 +205,33 @@ let basePAE=[];
 fetch('https://f1434408-oss.github.io/data-science-portfolio/base_pae.json')
 .then(res=>res.json())
 .then(data=>basePAE=data);
+
+const proveedoresPorDepartamento={
+"AMAZONAS":9,
+"ANCASH":9,
+"APURIMAC":7,
+"AREQUIPA":4,
+"AYACUCHO":11,
+"CAJAMARCA":12,
+"CUSCO":6,
+"HUANCAVELICA":6,
+"HUANUCO":11,
+"ICA":7,
+"JUNIN":4,
+"LA LIBERTAD":4,
+"LAMBAYEQUE":6,
+"LIMA":37,
+"LORETO":10,
+"MADRE DE DIOS":1,
+"MOQUEGUA":3,
+"PASCO":5,
+"PIURA":9,
+"PUNO":6,
+"SAN MARTIN":5,
+"TACNA":1,
+"TUMBES":2,
+"UCAYALI":9
+};
 
 map.on('load',function(){
 
@@ -292,6 +320,10 @@ map.on('mouseenter','fill-layer',function(e){
 
     if(popup)popup.remove();
 
+    const proveedores=proveedoresPorDepartamento[
+        feature.properties.NOMBDEP?.toUpperCase()
+    ] || 0;
+
     popup=new mapboxgl.Popup({offset:20})
     .setLngLat(e.lngLat)
     .setHTML(`
@@ -302,7 +334,8 @@ map.on('mouseenter','fill-layer',function(e){
     <b>Adjudicado:</b> ${feature.properties.ADJUDICADO}%<br>
     <b>Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%<br><br>
     <b>IIEE:</b> ${feature.properties.IIEE_TOTAL}<br>
-    <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}<br><br>
+    <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}<br>
+    <b>Proveedores:</b> ${proveedores}<br><br>
     <a href="#" id="ver-detalle" style="color:#48a0ff;font-weight:bold;">
     Ver detalle completo</a>
     `)
@@ -315,11 +348,7 @@ map.on('mouseenter','fill-layer',function(e){
 
 });
 
-/* 🔥 No hay mouseleave */
-
 });
-
-/* ================= MODAL ================= */
 
 function abrirModalConTabla(departamento){
 
