@@ -189,7 +189,7 @@ tbody tr:hover{background:#1f1f1f;transition:.2s;}
 
 <script>
 
-mapboxgl.accessToken="TU_TOKEN_AQUI";
+mapboxgl.accessToken="pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwdXBpN3o2eCJ9.lM43dWvXvojawo82gZFOIw";
 
 const map=new mapboxgl.Map({
     container:'map',
@@ -343,7 +343,7 @@ if(valor===null||valor===undefined)return"";
 
 if(columna==="VALOR ADJUDICADO" && Number(valor)===0) return "—";
 
-/* 🔥 CAMBIO: evitar separador de miles en RUC */
+/* 🔥 CAMBIO SOLICITADO */
 if(columna==="RUC -POSTOR/PROVEEDOR") return valor;
 
 if(!isNaN(valor)&&valor!=="")
