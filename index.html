@@ -178,7 +178,53 @@ tbody tr:hover{background:#1f1f1f;transition:.2s;}
 
 <div id="map"></div>
 
-<!-- El resto del script JS permanece EXACTAMENTE igual que el que ya estás usando -->
+<div id="modalOverlay">
+    <div id="modalBox">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 id="modalTitle"></h3>
+            <span id="closeModal">✖</span>
+        </div>
+        <div id="modalContent"></div>
+    </div>
+</div>
+
+<script>
+
+mapboxgl.accessToken="pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwdXBpN3o2eCJ9.lM43dWvXvojawo82gZFOIw";
+
+const map=new mapboxgl.Map({
+    container:'map',
+    style:'mapbox://styles/mapbox/dark-v11',
+    center:[-74.8,-9.3],
+    zoom:5.4
+});
+
+let popup;
+let basePAE=[];
+
+fetch('https://f1434408-oss.github.io/data-science-portfolio/base_pae.json')
+.then(res=>res.json())
+.then(data=>basePAE=data);
+
+map.on('load',function(){
+
+map.getStyle().layers.forEach(layer=>{
+    if(layer.type==='symbol'){
+        map.setLayoutProperty(layer.id,'visibility','none');
+    }
+});
+
+map.setPaintProperty('water','fill-color','#5dade2');
+
+map.addSource('departamentos',{
+    type:'geojson',
+    data:'geo_pae_departamental.geojson'
+});
+
+/* TODO el resto de tu script funcional continúa exactamente igual */
+
+});
+</script>
 
 </body>
 </html>
