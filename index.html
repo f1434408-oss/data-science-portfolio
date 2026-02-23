@@ -8,11 +8,7 @@
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet"/>
 
 <style>
-body{
-    margin:0;
-    font-family:'Segoe UI',sans-serif;
-    background:#111;
-}
+body{margin:0;font-family:'Segoe UI',sans-serif;background:#111;}
 
 /* ================= PANEL NACIONAL ================= */
 
@@ -26,29 +22,16 @@ body{
     z-index:1;
 }
 
-#panel h2{
-    font-size:34px;
-    margin-bottom:30px;
-}
+#panel h2{font-size:34px;margin-bottom:30px;}
 
-.kpi{
-    font-size:22px;
-    margin-bottom:8px;
-}
+.kpi{font-size:22px;margin-bottom:8px;}
 
-#panel hr{
-    margin:25px 0;
-    opacity:.15;
-}
+#panel hr{margin:25px 0;opacity:.15;}
 
-.legend{
-    margin-top:20px;
-    font-size:20px;
-}
+.legend{margin-top:20px;font-size:20px;}
 
 .legend span{
-    width:18px;
-    height:18px;
+    width:18px;height:18px;
     display:inline-block;
     margin-right:10px;
     border-radius:4px;
@@ -101,35 +84,15 @@ body{
     flex-direction:column;
 }
 
-#modalTitle{
-    text-align:center;
-    margin:0;
-}
-
-#modalContent{
-    margin-top:20px;
-    overflow:auto;
-    flex:1;
-}
-
-#closeModal{
-    cursor:pointer;
-    font-size:22px;
-}
+#modalTitle{text-align:center;margin:0;}
+#modalContent{margin-top:20px;overflow:auto;flex:1;}
+#closeModal{cursor:pointer;font-size:22px;}
 
 /* ================= TABLA ================= */
 
-table{
-    width:100%;
-    border-collapse:collapse;
-    font-size:13px;
-}
+table{width:100%;border-collapse:collapse;font-size:13px;}
 
-thead{
-    background:#222;
-    position:sticky;
-    top:0;
-}
+thead{background:#222;position:sticky;top:0;}
 
 th{
     padding:10px;
@@ -159,6 +122,7 @@ tbody tr:hover{background:#1f1f1f;transition:.2s;}
     <div class="kpi"><b>IIEE:</b> 67,055</div>
     <div class="kpi"><b>Usuarios:</b> 4,187,782</div>
     <div class="kpi"><b>Ítems:</b> 711</div>
+    <div class="kpi"><b>Proveedores:</b> 162</div>
 
     <hr>
 
@@ -190,6 +154,17 @@ tbody tr:hover{background:#1f1f1f;transition:.2s;}
 <script>
 
 mapboxgl.accessToken="pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwdXBpN3o2eCJ9.lM43dWvXvojawo82gZFOIw";
+
+/* ================= PROVEEDORES ================= */
+
+const proveedoresPorDep = {
+    "AMAZONAS": 9,"ANCASH": 9,"APURIMAC": 7,"AREQUIPA": 4,
+    "AYACUCHO": 11,"CAJAMARCA": 12,"CUSCO": 6,"HUANCAVELICA": 6,
+    "HUANUCO": 11,"ICA": 7,"JUNIN": 4,"LA LIBERTAD": 4,
+    "LAMBAYEQUE": 6,"LIMA": 37,"LORETO": 10,"MADRE DE DIOS": 1,
+    "MOQUEGUA": 3,"PASCO": 5,"PIURA": 9,"PUNO": 6,
+    "SAN MARTIN": 5,"TACNA": 1,"TUMBES": 2,"UCAYALI": 9
+};
 
 const map=new mapboxgl.Map({
     container:'map',
@@ -271,8 +246,7 @@ function scaleFeature(feature,scale){
     const coords=newFeature.geometry.coordinates[0];
     let cx=0,cy=0;
     coords.forEach(p=>{cx+=p[0];cy+=p[1];});
-    cx/=coords.length;
-    cy/=coords.length;
+    cx/=coords.length;cy/=coords.length;
     newFeature.geometry.coordinates[0]=coords.map(p=>[
         cx+(p[0]-cx)*scale,
         cy+(p[1]-cy)*scale
@@ -292,17 +266,21 @@ map.on('mouseenter','fill-layer',function(e){
 
     if(popup)popup.remove();
 
+    const depNombre = feature.properties.NOMBDEP;
+    const proveedores = proveedoresPorDep[depNombre] ?? "-";
+
     popup=new mapboxgl.Popup({offset:20})
     .setLngLat(e.lngLat)
     .setHTML(`
-    <b style="font-size:24px;">${feature.properties.NOMBDEP}</b>
+    <b style="font-size:24px;">${depNombre}</b>
     <hr style="opacity:.3;">
-    <b>Ítems:</b> ${feature.properties.ITEMS_TOTAL}<br><br>
+    <b>Ítems:</b> ${feature.properties.ITEMS_TOTAL}<br>
     <b>Contrato:</b> ${feature.properties.CONTRATO}%<br>
     <b>Adjudicado:</b> ${feature.properties.ADJUDICADO}%<br>
     <b>Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%<br><br>
     <b>IIEE:</b> ${feature.properties.IIEE_TOTAL}<br>
-    <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}<br><br>
+    <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}<br>
+    <b>Proveedores:</b> ${proveedores}<br><br>
     <a href="#" id="ver-detalle" style="color:#48a0ff;font-weight:bold;">
     Ver detalle completo</a>
     `)
@@ -310,68 +288,11 @@ map.on('mouseenter','fill-layer',function(e){
 
     document.getElementById('ver-detalle').addEventListener('click',function(evt){
         evt.preventDefault();
-        abrirModalConTabla(feature.properties.NOMBDEP);
+        abrirModalConTabla(depNombre);
     });
 
 });
 
-/* 🔥 No hay mouseleave */
-
-});
-
-/* ================= MODAL ================= */
-
-function abrirModalConTabla(departamento){
-
-const datosFiltrados=basePAE.filter(item=>
-item.DEPARTAMENTO?.trim().toUpperCase()===departamento.trim().toUpperCase()
-);
-
-document.getElementById('modalTitle').innerText=
-"Detalle completo - "+departamento;
-
-if(datosFiltrados.length===0){
-document.getElementById('modalContent').innerHTML="<p>No hay registros.</p>";
-}else{
-
-const columnasExcluir=["MODALIDAD_SDC","DEPARTAMENTO"];
-
-const columnas=Object.keys(datosFiltrados[0])
-.filter(col=>!columnasExcluir.includes(col));
-
-function format(valor,columna){
-if(valor===null||valor===undefined)return"";
-if(columna==="RUC -POSTOR/PROVEEDOR") return valor;
-if(columna==="VALOR ADJUDICADO" && Number(valor)===0) return "—";
-if(!isNaN(valor)&&valor!=="")
-return Number(valor).toLocaleString("en-US");
-return valor;
-}
-
-let tabla="<table><thead><tr>";
-
-columnas.forEach(col=>{tabla+=`<th>${col}</th>`;});
-
-tabla+="</tr></thead><tbody>";
-
-datosFiltrados.forEach(row=>{
-tabla+="<tr>";
-columnas.forEach(col=>{
-tabla+=`<td>${format(row[col],col)}</td>`;
-});
-tabla+="</tr>";
-});
-
-tabla+="</tbody></table>";
-
-document.getElementById('modalContent').innerHTML=tabla;
-}
-
-document.getElementById('modalOverlay').style.display='flex';
-}
-
-document.getElementById('closeModal').addEventListener('click',function(){
-document.getElementById('modalOverlay').style.display='none';
 });
 
 </script>
