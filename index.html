@@ -303,6 +303,7 @@ map.on('mouseenter','fill-layer',function(e){
     <b>Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%<br><br>
     <b>IIEE:</b> ${feature.properties.IIEE_TOTAL}<br>
     <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}<br><br>
+    <b>Proveedores:</b> ${feature.properties.PROVEEDORES}<br><br>
     <a href="#" id="ver-detalle" style="color:#48a0ff;font-weight:bold;">
     Ver detalle completo</a>
     `)
@@ -343,7 +344,6 @@ if(valor===null||valor===undefined)return"";
 
 if(columna==="VALOR ADJUDICADO" && Number(valor)===0) return "—";
 
-/* 🔥 CAMBIO SOLICITADO */
 if(columna==="RUC -POSTOR/PROVEEDOR") return valor;
 
 if(!isNaN(valor)&&valor!=="")
