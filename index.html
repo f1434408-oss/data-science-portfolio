@@ -315,12 +315,7 @@ map.on('mouseenter','fill-layer',function(e){
 
 });
 
-map.on('mouseleave','fill-layer',function(){
-    map.getSource('hover-departamento').setData({
-        type:"FeatureCollection",
-        features:[]
-    });
-});
+/* 🔥 NO HAY mouseleave — se mantiene grande */
 
 });
 
