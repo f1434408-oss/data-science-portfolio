@@ -189,7 +189,7 @@ tbody tr:hover{background:#1f1f1f;transition:.2s;}
 
 <script>
 
-mapboxgl.accessToken="pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwdXBpN3o2eCJ9.lM43dWvXvojawo82gZFOIw";
+mapboxgl.accessToken="TU_TOKEN_AQUI";
 
 const map=new mapboxgl.Map({
     container:'map',
@@ -315,8 +315,6 @@ map.on('mouseenter','fill-layer',function(e){
 
 });
 
-/* 🔥 No hay mouseleave */
-
 });
 
 /* ================= MODAL ================= */
@@ -340,10 +338,17 @@ const columnas=Object.keys(datosFiltrados[0])
 .filter(col=>!columnasExcluir.includes(col));
 
 function format(valor,columna){
+
 if(valor===null||valor===undefined)return"";
+
 if(columna==="VALOR ADJUDICADO" && Number(valor)===0) return "—";
+
+/* 🔥 CAMBIO: evitar separador de miles en RUC */
+if(columna==="RUC -POSTOR/PROVEEDOR") return valor;
+
 if(!isNaN(valor)&&valor!=="")
 return Number(valor).toLocaleString("en-US");
+
 return valor;
 }
 
