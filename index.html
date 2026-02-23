@@ -10,8 +10,6 @@
 <style>
 body{margin:0;font-family:'Segoe UI',sans-serif;background:#111;}
 
-/* ================= PANEL NACIONAL ================= */
-
 #panel{
     position:absolute;
     width:420px;
@@ -23,13 +21,10 @@ body{margin:0;font-family:'Segoe UI',sans-serif;background:#111;}
 }
 
 #panel h2{font-size:34px;margin-bottom:30px;}
-
 .kpi{font-size:22px;margin-bottom:8px;}
-
 #panel hr{margin:25px 0;opacity:.15;}
 
 .legend{margin-top:20px;font-size:20px;}
-
 .legend span{
     width:18px;height:18px;
     display:inline-block;
@@ -37,16 +32,12 @@ body{margin:0;font-family:'Segoe UI',sans-serif;background:#111;}
     border-radius:4px;
 }
 
-/* ================= MAPA ================= */
-
 #map{
     position:absolute;
     left:420px;
     width:calc(100% - 420px);
     height:100%;
 }
-
-/* ================= POPUP ================= */
 
 .mapboxgl-popup-content{
     background:#1c1c1c;
@@ -60,8 +51,7 @@ body{margin:0;font-family:'Segoe UI',sans-serif;background:#111;}
     border-top-color:#1c1c1c!important;
 }
 
-/* ================= MODAL ================= */
-
+/* MODAL */
 #modalOverlay{
     position:fixed;
     inset:0;
@@ -88,29 +78,13 @@ body{margin:0;font-family:'Segoe UI',sans-serif;background:#111;}
 #modalContent{margin-top:20px;overflow:auto;flex:1;}
 #closeModal{cursor:pointer;font-size:22px;}
 
-/* ================= TABLA ================= */
-
 table{width:100%;border-collapse:collapse;font-size:13px;}
-
 thead{background:#222;position:sticky;top:0;}
-
-th{
-    padding:10px;
-    text-align:center;
-    border-bottom:1px solid #444;
-    font-weight:600;
-}
-
-td{
-    padding:9px;
-    text-align:center;
-    border-bottom:1px solid #1f1f1f;
-}
-
+th{padding:10px;text-align:center;border-bottom:1px solid #444;font-weight:600;}
+td{padding:9px;text-align:center;border-bottom:1px solid #1f1f1f;}
 tbody tr:nth-child(even){background:#161616;}
 tbody tr:nth-child(odd){background:#121212;}
 tbody tr:hover{background:#1f1f1f;transition:.2s;}
-
 </style>
 </head>
 
@@ -155,141 +129,139 @@ tbody tr:hover{background:#1f1f1f;transition:.2s;}
 
 mapboxgl.accessToken="pk.eyJ1IjoiMjAxODE3MjUiLCJhIjoiY21sanZ1NmdzMDQ5czNrcHFwdXBpN3o2eCJ9.lM43dWvXvojawo82gZFOIw";
 
-/* ================= PROVEEDORES ================= */
-
-const proveedoresPorDep = {
-    "AMAZONAS": 9,"ANCASH": 9,"APURIMAC": 7,"AREQUIPA": 4,
-    "AYACUCHO": 11,"CAJAMARCA": 12,"CUSCO": 6,"HUANCAVELICA": 6,
-    "HUANUCO": 11,"ICA": 7,"JUNIN": 4,"LA LIBERTAD": 4,
-    "LAMBAYEQUE": 6,"LIMA": 37,"LORETO": 10,"MADRE DE DIOS": 1,
-    "MOQUEGUA": 3,"PASCO": 5,"PIURA": 9,"PUNO": 6,
-    "SAN MARTIN": 5,"TACNA": 1,"TUMBES": 2,"UCAYALI": 9
+/* SOLO AGREGAMOS ESTO */
+const proveedoresPorDep={
+"AMAZONAS":9,"ANCASH":9,"APURIMAC":7,"AREQUIPA":4,"AYACUCHO":11,
+"CAJAMARCA":12,"CUSCO":6,"HUANCAVELICA":6,"HUANUCO":11,"ICA":7,
+"JUNIN":4,"LA LIBERTAD":4,"LAMBAYEQUE":6,"LIMA":37,"LORETO":10,
+"MADRE DE DIOS":1,"MOQUEGUA":3,"PASCO":5,"PIURA":9,"PUNO":6,
+"SAN MARTIN":5,"TACNA":1,"TUMBES":2,"UCAYALI":9
 };
 
 const map=new mapboxgl.Map({
-    container:'map',
-    style:'mapbox://styles/mapbox/dark-v11',
-    center:[-74.8,-9.3],
-    zoom:5.4
+container:'map',
+style:'mapbox://styles/mapbox/dark-v11',
+center:[-74.8,-9.3],
+zoom:5.4
 });
 
 let popup;
+let hoveredFeature=null;
 let basePAE=[];
 
-fetch('https://f1434408-oss.github.io/data-science-portfolio/base_pae.json')
+fetch('base_pae.json')
 .then(res=>res.json())
 .then(data=>basePAE=data);
 
 map.on('load',function(){
 
 map.getStyle().layers.forEach(layer=>{
-    if(layer.type==='symbol'){
-        map.setLayoutProperty(layer.id,'visibility','none');
-    }
+if(layer.type==='symbol'){
+map.setLayoutProperty(layer.id,'visibility','none');
+}
 });
 
 map.setPaintProperty('water','fill-color','#5dade2');
 
 map.addSource('departamentos',{
-    type:'geojson',
-    data:'geo_pae_departamental.geojson'
+type:'geojson',
+data:'geo_pae_departamental.geojson'
 });
 
 map.addSource('hover-departamento',{
-    type:'geojson',
-    data:{type:"FeatureCollection",features:[]}
+type:'geojson',
+data:{type:"FeatureCollection",features:[]}
 });
 
 const colorExpression=[
-    'case',
-    ['all',
-        ['>=',['get','CONTRATO'],['get','ADJUDICADO']],
-        ['>=',['get','CONTRATO'],['get','EN INVITACIÓN']]
-    ],'#27AE60',
-    ['all',
-        ['>=',['get','ADJUDICADO'],['get','CONTRATO']],
-        ['>=',['get','ADJUDICADO'],['get','EN INVITACIÓN']]
-    ],'#F1C40F',
-    '#E74C3C'
+'case',
+['all',
+['>=',['get','CONTRATO'],['get','ADJUDICADO']],
+['>=',['get','CONTRATO'],['get','EN INVITACIÓN']]
+],'#27AE60',
+['all',
+['>=',['get','ADJUDICADO'],['get','CONTRATO']],
+['>=',['get','ADJUDICADO'],['get','EN INVITACIÓN']]
+],'#F1C40F',
+'#E74C3C'
 ];
 
 map.addLayer({
-    id:'fill-layer',
-    type:'fill',
-    source:'departamentos',
-    paint:{'fill-color':colorExpression,'fill-opacity':0.85}
+id:'fill-layer',
+type:'fill',
+source:'departamentos',
+paint:{'fill-color':colorExpression,'fill-opacity':0.85}
 });
 
 map.addLayer({
-    id:'border-layer',
-    type:'line',
-    source:'departamentos',
-    paint:{'line-color':'rgba(255,255,255,0.4)','line-width':1.2}
+id:'border-layer',
+type:'line',
+source:'departamentos',
+paint:{'line-color':'rgba(255,255,255,0.4)','line-width':1.2}
 });
 
 map.addLayer({
-    id:'hover-fill',
-    type:'fill',
-    source:'hover-departamento',
-    paint:{'fill-color':colorExpression,'fill-opacity':1}
+id:'hover-fill',
+type:'fill',
+source:'hover-departamento',
+paint:{'fill-color':colorExpression,'fill-opacity':1}
 });
 
 map.addLayer({
-    id:'hover-border',
-    type:'line',
-    source:'hover-departamento',
-    paint:{'line-color':'#ffffff','line-width':3}
+id:'hover-border',
+type:'line',
+source:'hover-departamento',
+paint:{'line-color':'#ffffff','line-width':3}
 });
 
 function scaleFeature(feature,scale){
-    const newFeature=JSON.parse(JSON.stringify(feature));
-    const coords=newFeature.geometry.coordinates[0];
-    let cx=0,cy=0;
-    coords.forEach(p=>{cx+=p[0];cy+=p[1];});
-    cx/=coords.length;cy/=coords.length;
-    newFeature.geometry.coordinates[0]=coords.map(p=>[
-        cx+(p[0]-cx)*scale,
-        cy+(p[1]-cy)*scale
-    ]);
-    return newFeature;
+const newFeature=JSON.parse(JSON.stringify(feature));
+const coords=newFeature.geometry.coordinates[0];
+let cx=0,cy=0;
+coords.forEach(p=>{cx+=p[0];cy+=p[1];});
+cx/=coords.length;cy/=coords.length;
+newFeature.geometry.coordinates[0]=coords.map(p=>[
+cx+(p[0]-cx)*scale,
+cy+(p[1]-cy)*scale
+]);
+return newFeature;
 }
 
-map.on('mouseenter','fill-layer',function(e){
+map.on('mousemove','fill-layer',function(e){
 
-    const feature=e.features[0];
-    const scaled=scaleFeature(feature,2.4);
+hoveredFeature=e.features[0];
+const scaled=scaleFeature(hoveredFeature,2.4);
 
-    map.getSource('hover-departamento').setData({
-        type:"FeatureCollection",
-        features:[scaled]
-    });
+map.getSource('hover-departamento').setData({
+type:"FeatureCollection",
+features:[scaled]
+});
 
-    if(popup)popup.remove();
+if(popup)popup.remove();
 
-    const depNombre = feature.properties.NOMBDEP;
-    const proveedores = proveedoresPorDep[depNombre] ?? "-";
+const depNombre=hoveredFeature.properties.NOMBDEP;
+const proveedores=proveedoresPorDep[depNombre] ?? "-";
 
-    popup=new mapboxgl.Popup({offset:20})
-    .setLngLat(e.lngLat)
-    .setHTML(`
-    <b style="font-size:24px;">${depNombre}</b>
-    <hr style="opacity:.3;">
-    <b>Ítems:</b> ${feature.properties.ITEMS_TOTAL}<br>
-    <b>Contrato:</b> ${feature.properties.CONTRATO}%<br>
-    <b>Adjudicado:</b> ${feature.properties.ADJUDICADO}%<br>
-    <b>Invitación:</b> ${feature.properties["EN INVITACIÓN"]}%<br><br>
-    <b>IIEE:</b> ${feature.properties.IIEE_TOTAL}<br>
-    <b>Usuarios:</b> ${feature.properties.USUARIOS_FMT}<br>
-    <b>Proveedores:</b> ${proveedores}<br><br>
-    <a href="#" id="ver-detalle" style="color:#48a0ff;font-weight:bold;">
-    Ver detalle completo</a>
-    `)
-    .addTo(map);
+popup=new mapboxgl.Popup({offset:20})
+.setLngLat(e.lngLat)
+.setHTML(`
+<b style="font-size:24px;">${depNombre}</b>
+<hr style="opacity:.3;">
+<b>Ítems:</b> ${hoveredFeature.properties.ITEMS_TOTAL}<br>
+<b>Contrato:</b> ${hoveredFeature.properties.CONTRATO}%<br>
+<b>Adjudicado:</b> ${hoveredFeature.properties.ADJUDICADO}%<br>
+<b>Invitación:</b> ${hoveredFeature.properties["EN INVITACIÓN"]}%<br><br>
+<b>IIEE:</b> ${hoveredFeature.properties.IIEE_TOTAL}<br>
+<b>Usuarios:</b> ${hoveredFeature.properties.USUARIOS_FMT}<br>
+<b>Proveedores:</b> ${proveedores}<br><br>
+<a href="#" id="ver-detalle" style="color:#48a0ff;font-weight:bold;">Ver detalle completo</a>
+`)
+.addTo(map);
 
-    document.getElementById('ver-detalle').addEventListener('click',function(evt){
-        evt.preventDefault();
-        abrirModalConTabla(depNombre);
-    });
+document.getElementById('ver-detalle').addEventListener('click',function(evt){
+evt.preventDefault();
+abrirModalConTabla(depNombre);
+});
 
 });
 
