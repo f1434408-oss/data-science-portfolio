@@ -341,6 +341,7 @@ const columnas=Object.keys(datosFiltrados[0])
 
 function format(valor,columna){
 if(valor===null||valor===undefined)return"";
+if(columna==="RUC -POSTOR/PROVEEDOR") return valor;
 if(columna==="VALOR ADJUDICADO" && Number(valor)===0) return "—";
 if(!isNaN(valor)&&valor!=="")
 return Number(valor).toLocaleString("en-US");
