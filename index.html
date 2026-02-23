@@ -315,7 +315,7 @@ map.on('mouseenter','fill-layer',function(e){
 
 });
 
-/* 🔥 NO HAY mouseleave — se mantiene grande */
+/* 🔥 No hay mouseleave */
 
 });
 
@@ -339,8 +339,9 @@ const columnasExcluir=["MODALIDAD_SDC","DEPARTAMENTO"];
 const columnas=Object.keys(datosFiltrados[0])
 .filter(col=>!columnasExcluir.includes(col));
 
-function format(valor){
+function format(valor,columna){
 if(valor===null||valor===undefined)return"";
+if(columna==="VALOR ADJUDICADO" && Number(valor)===0) return "—";
 if(!isNaN(valor)&&valor!=="")
 return Number(valor).toLocaleString("en-US");
 return valor;
@@ -355,7 +356,7 @@ tabla+="</tr></thead><tbody>";
 datosFiltrados.forEach(row=>{
 tabla+="<tr>";
 columnas.forEach(col=>{
-tabla+=`<td>${format(row[col])}</td>`;
+tabla+=`<td>${format(row[col],col)}</td>`;
 });
 tabla+="</tr>";
 });
